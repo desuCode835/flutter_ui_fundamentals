@@ -1,0 +1,39 @@
+{
+    "student": {
+        "nim": "2415051014",
+        "name": "Gede Supadmma",
+        "semester": 5
+    },
+    "courses": [
+        {
+            "code": "MOB01",
+            "title": "Git & GitHub",
+            "credits": 2,
+            "status": "done"
+        },
+        {
+            "code": "MOB02",
+            "title": "Dart Fundamentals",
+            "credits": 2,
+            "status": "done"
+        },
+        {
+            "code": "MOB03",
+            "title": "Flutter UI Fundamentals",
+            "credits": 3,
+            "status": "active"
+        },
+        {
+            "code": "MOB04",
+            "title": "Navigation",
+            "credits": 2,
+            "status": "planned"
+        },
+        {
+            "code": "MOB05",
+            "title": "State Management",
+            "credits": 3,
+            "status": "planned"
+        }
+    ]
+}
