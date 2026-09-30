@@ -3,6 +3,19 @@ import 'package:flutter/material.dart';
 const String studentName = 'Gede Supadma';
 const String studentId = '2415051014';
 
+final List<Map<String, String>> courses = [
+  {'code': 'PM01', 'name': 'Pemrograman Mobile', 'credits': '3 SKS'},
+  {
+    'code': 'PBO01',
+    'name': 'Pemrograman Berorientasi Objek',
+    'credits': '3 SKS',
+  },
+  {'code': 'WEB01', 'name': 'Pemrograman Web', 'credits': '3 SKS'},
+  {'code': 'BD01', 'name': 'Basis Data', 'credits': '3 SKS'},
+  {'code': 'RPL01', 'name': 'Rekayasa Perangkat Lunak', 'credits': '3 SKS'},
+  {'code': 'MM01', 'name': 'Multimedia', 'credits': '2 SKS'},
+];
+
 void main() {
   runApp(const MyApp());
 }
@@ -14,102 +27,96 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const Stage4Page(),
+      home: const CoursePage(),
     );
   }
 }
 
-class Stage4Page extends StatelessWidget {
-  const Stage4Page({super.key});
+class CoursePage extends StatelessWidget {
+  const CoursePage({super.key});
+
+  int columnsFor(double width) {
+    if (width < 600) return 1;
+    if (width < 840) return 2;
+    return 3;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final skills = [
-      'Dart',
-      'Flutter',
-      'UI Design',
-      'Git',
-      'Firebase',
-      'Database',
-    ];
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Tahap 4 - Expanded & Wrap')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Nama: Gede Supadma',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+      appBar: AppBar(title: const Text('Tahap 5 - GridView Responsif')),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = columnsFor(constraints.maxWidth);
 
-            const SizedBox(height: 24),
-
-            const Text(
-              'Pembagian Panel 2:1',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    height: 120,
-                    alignment: Alignment.center,
-                    color: Colors.blue.shade200,
-                    child: const Text(
-                      'Panel A\nFlex 2',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                const Text(
+                  'Course Explorer',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-
-                const SizedBox(width: 8),
+                const SizedBox(height: 8),
+                const Text(
+                  'Nama: Gede Supadma',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const Text('NIM: 2415051014', style: TextStyle(fontSize: 16)),
+                const SizedBox(height: 16),
 
                 Expanded(
-                  child: Container(
-                    height: 120,
-                    alignment: Alignment.center,
-                    color: Colors.orange.shade200,
-                    child: const Text(
-                      'Panel B\nFlex 1',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.5,
                     ),
+                    itemCount: courses.length,
+                    itemBuilder: (context, index) {
+                      return CourseCard(course: courses[index]);
+                    },
                   ),
                 ),
               ],
             ),
+          );
+        },
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 30),
+class CourseCard extends StatelessWidget {
+  final Map<String, String> course;
 
-            const Text(
-              'Skills',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  const CourseCard({super.key, required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book, size: 40),
+            const SizedBox(height: 10),
+            Text(
+              course['code']!,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-
-            const SizedBox(height: 12),
-
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: skills
-                  .map((skill) => Chip(label: Text(skill)))
-                  .toList(),
+            const SizedBox(height: 6),
+            Text(
+              course['name']!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
             ),
+            const SizedBox(height: 6),
+            Text(course['credits']!),
           ],
         ),
       ),
