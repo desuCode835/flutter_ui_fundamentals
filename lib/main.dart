@@ -47,10 +47,26 @@ class MyApp extends StatelessWidget {
 class CourseListPage extends StatelessWidget {
   const CourseListPage({super.key});
 
+  Future<void> openCourseDetail(
+    BuildContext context,
+    Map<String, dynamic> course,
+  ) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => CourseDetailPage(course: course)),
+    );
+
+    if (result == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${course['title']} berhasil dipilih/favorite')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tahap 8 - Course List')),
+      appBar: AppBar(title: const Text('Tahap 9 - Returning Data')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -74,14 +90,7 @@ class CourseListPage extends StatelessWidget {
                 title: Text(course['title']),
                 subtitle: Text('${course['code']} • ${course['credits']} SKS'),
                 trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CourseDetailPage(course: course),
-                    ),
-                  );
-                },
+                onTap: () => openCourseDetail(context, course),
               ),
             ),
           ),
@@ -152,6 +161,19 @@ class CourseDetailPage extends StatelessWidget {
             const Text('Nama: Gede Supadma', style: TextStyle(fontSize: 17)),
 
             const Text('NIM: 2415051014', style: TextStyle(fontSize: 17)),
+
+            const Spacer(),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context, true);
+                },
+                icon: const Icon(Icons.favorite),
+                label: const Text('Pilih / Favorite'),
+              ),
+            ),
           ],
         ),
       ),
