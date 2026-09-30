@@ -14,100 +14,85 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const ProfilePage(),
+      home: const HomePage(),
     );
   }
 }
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+// ==================== HOME PAGE ====================
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tahap 6 - Scrollable Content')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(title: const Text('Tahap 7 - Navigation')),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Profil Mahasiswa',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              'Home Page',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             const Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
 
             const Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 30),
 
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DetailPage()),
+                );
+              },
+              child: const Text('Buka Detail'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== DETAIL PAGE ====================
+
+class DetailPage extends StatelessWidget {
+  const DetailPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detail Page')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             const Text(
-              'Form Data',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              'Detail Page',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Nama Lengkap',
-                border: OutlineInputBorder(),
-              ),
+            const Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
+
+            const Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+
+            const SizedBox(height: 30),
+
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Kembali'),
             ),
-
-            const SizedBox(height: 16),
-
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'NIM',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            const TextField(
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Alamat',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            const TextField(
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: 'Deskripsi Diri',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            const TextField(
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: 'Pengalaman Belajar',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Simpan Data'),
-              ),
-            ),
-
-            const SizedBox(height: 300),
           ],
         ),
       ),
