@@ -3,29 +3,6 @@ import 'package:flutter/material.dart';
 const String studentName = 'Gede Supadma';
 const String studentId = '2415051014';
 
-final List<Map<String, dynamic>> courses = [
-  {
-    'title': 'Pemrograman Mobile',
-    'code': 'PM01',
-    'credits': 3,
-    'status': 'Aktif',
-  },
-  {
-    'title': 'Pemrograman Web',
-    'code': 'WEB01',
-    'credits': 3,
-    'status': 'Aktif',
-  },
-  {'title': 'Basis Data', 'code': 'BD01', 'credits': 3, 'status': 'Aktif'},
-  {
-    'title': 'Rekayasa Perangkat Lunak',
-    'code': 'RPL01',
-    'credits': 3,
-    'status': 'Aktif',
-  },
-  {'title': 'Multimedia', 'code': 'MM01', 'credits': 2, 'status': 'Aktif'},
-];
-
 void main() {
   runApp(const MyApp());
 }
@@ -37,143 +14,135 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const CourseListPage(),
+      home: const MainPage(),
     );
   }
 }
 
-// ==================== COURSE LIST ====================
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
-class CourseListPage extends StatelessWidget {
-  const CourseListPage({super.key});
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
 
-  Future<void> openCourseDetail(
-    BuildContext context,
-    Map<String, dynamic> course,
-  ) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => CourseDetailPage(course: course)),
-    );
+class _MainPageState extends State<MainPage> {
+  int currentIndex = 0;
 
-    if (result == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${course['title']} berhasil dipilih/favorite')),
-      );
-    }
-  }
+  final List<Widget> pages = const [HomePage(), CoursesPage(), ProfilePage()];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tahap 9 - Returning Data')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Course Explorer',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 8),
-
-          const Text('Nama: Gede Supadma', style: TextStyle(fontSize: 16)),
-
-          const Text('NIM: 2415051014', style: TextStyle(fontSize: 16)),
-
-          const SizedBox(height: 20),
-
-          ...courses.map(
-            (course) => Card(
-              child: ListTile(
-                leading: const Icon(Icons.menu_book),
-                title: Text(course['title']),
-                subtitle: Text('${course['code']} • ${course['credits']} SKS'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => openCourseDetail(context, course),
-              ),
-            ),
-          ),
+      body: pages[currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.school), label: 'Courses'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
   }
 }
 
-// ==================== COURSE DETAIL ====================
+// ==================== HOME ====================
 
-class CourseDetailPage extends StatelessWidget {
-  final Map<String, dynamic> course;
-
-  const CourseDetailPage({super.key, required this.course});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Course Detail')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      appBar: AppBar(title: const Text('Home')),
+      body: const Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Detail Course',
+            Icon(Icons.home, size: 80),
+            SizedBox(height: 20),
+            Text(
+              'Selamat Datang',
               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
+            SizedBox(height: 12),
+            Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
+            Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 24),
+// ==================== COURSES ====================
 
+class CoursesPage extends StatelessWidget {
+  const CoursesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Courses')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          CourseCard(title: 'Pemrograman Mobile', code: 'PM01'),
+          CourseCard(title: 'Pemrograman Web', code: 'WEB01'),
+          CourseCard(title: 'Basis Data', code: 'BD01'),
+          CourseCard(title: 'Rekayasa Perangkat Lunak', code: 'RPL01'),
+        ],
+      ),
+    );
+  }
+}
+
+class CourseCard extends StatelessWidget {
+  final String title;
+  final String code;
+
+  const CourseCard({super.key, required this.title, required this.code});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.school),
+        title: Text(title),
+        subtitle: Text(code),
+      ),
+    );
+  }
+}
+
+// ==================== PROFILE ====================
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(radius: 45, child: Icon(Icons.person, size: 50)),
+            SizedBox(height: 20),
             Text(
-              course['title'],
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'Profil Mahasiswa',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              'Kode: ${course['code']}',
-              style: const TextStyle(fontSize: 18),
-            ),
-
-            Text(
-              'SKS: ${course['credits']}',
-              style: const TextStyle(fontSize: 18),
-            ),
-
-            Text(
-              'Status: ${course['status']}',
-              style: const TextStyle(fontSize: 18),
-            ),
-
-            const SizedBox(height: 24),
-
-            const Divider(),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              'Data Mahasiswa',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text('Nama: Gede Supadma', style: TextStyle(fontSize: 17)),
-
-            const Text('NIM: 2415051014', style: TextStyle(fontSize: 17)),
-
-            const Spacer(),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context, true);
-                },
-                icon: const Icon(Icons.favorite),
-                label: const Text('Pilih / Favorite'),
-              ),
-            ),
+            SizedBox(height: 16),
+            Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
+            Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
           ],
         ),
       ),
