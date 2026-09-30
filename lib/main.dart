@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-const String studentName = 'Gede Supadma';
-const String studentId = '2415051014';
-
 void main() {
   runApp(const MyApp());
 }
@@ -14,10 +11,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'Adaptive Navigation',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
       home: const MainPage(),
     );
   }
 }
+
+// =========================
+// MAIN PAGE / APP SHELL
+// =========================
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -27,32 +33,95 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int currentIndex = 0;
+  int selectedIndex = 0;
 
   final List<Widget> pages = const [HomePage(), CoursesPage(), ProfilePage()];
 
+  NavigationBar buildNavigationBar() {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: (index) {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.book_outlined),
+          selectedIcon: Icon(Icons.book),
+          label: 'Courses',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ],
+    );
+  }
+
+  NavigationRail buildNavigationRail() {
+    return NavigationRail(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: (index) {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      labelType: NavigationRailLabelType.all,
+      destinations: const [
+        NavigationRailDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: Text('Home'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.book_outlined),
+          selectedIcon: Icon(Icons.book),
+          label: Text('Courses'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: Text('Profile'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: pages[currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.school), label: 'Courses'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 840) {
+          return Scaffold(
+            body: pages[selectedIndex],
+            bottomNavigationBar: buildNavigationBar(),
+          );
+        }
+
+        return Scaffold(
+          body: Row(
+            children: [
+              buildNavigationRail(),
+              const VerticalDivider(width: 1),
+              Expanded(child: pages[selectedIndex]),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-// ==================== HOME ====================
+// =========================
+// HOME
+// =========================
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -65,15 +134,15 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home, size: 80),
-            SizedBox(height: 20),
+            Icon(Icons.home, size: 70),
+            SizedBox(height: 16),
             Text(
-              'Selamat Datang',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              'Welcome!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 12),
-            Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
-            Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 8),
+            Text('Nama: Gede Supadma'),
+            Text('NIM: 2415051014'),
           ],
         ),
       ),
@@ -81,47 +150,44 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ==================== COURSES ====================
+// =========================
+// COURSES
+// =========================
 
 class CoursesPage extends StatelessWidget {
   const CoursesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final courses = [
+      'Pemrograman Mobile',
+      'Pemrograman Web',
+      'Basis Data',
+      'Rekayasa Perangkat Lunak',
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Courses')),
-      body: ListView(
+      body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: const [
-          CourseCard(title: 'Pemrograman Mobile', code: 'PM01'),
-          CourseCard(title: 'Pemrograman Web', code: 'WEB01'),
-          CourseCard(title: 'Basis Data', code: 'BD01'),
-          CourseCard(title: 'Rekayasa Perangkat Lunak', code: 'RPL01'),
-        ],
+        itemCount: courses.length,
+        itemBuilder: (context, index) {
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.book),
+              title: Text(courses[index]),
+              subtitle: const Text('Gede Supadma - 2415051014'),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class CourseCard extends StatelessWidget {
-  final String title;
-  final String code;
-
-  const CourseCard({super.key, required this.title, required this.code});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.school),
-        title: Text(title),
-        subtitle: Text(code),
-      ),
-    );
-  }
-}
-
-// ==================== PROFILE ====================
+// =========================
+// PROFILE
+// =========================
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -134,15 +200,14 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 45, child: Icon(Icons.person, size: 50)),
-            SizedBox(height: 20),
-            Text(
-              'Profil Mahasiswa',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            CircleAvatar(radius: 50, child: Icon(Icons.person, size: 55)),
             SizedBox(height: 16),
-            Text('Nama: Gede Supadma', style: TextStyle(fontSize: 18)),
-            Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+            Text(
+              'Gede Supadma',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('NIM: 2415051014'),
           ],
         ),
       ),
