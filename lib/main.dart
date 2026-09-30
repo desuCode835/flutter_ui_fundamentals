@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Form Feedback',
+      title: 'Feedback App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
@@ -29,14 +29,14 @@ class FeedbackPage extends StatefulWidget {
 }
 
 class _FeedbackPageState extends State<FeedbackPage> {
-  // GlobalKey untuk mengontrol Form
+  // GlobalKey untuk Form
   final formKey = GlobalKey<FormState>();
 
-  // Konstanta identitas
+  // Identitas
   static const String namaDefault = 'Gede Supadma';
   static const String nimDefault = '2415051014';
 
-  // Controller untuk mengambil isi input
+  // Controller
   final TextEditingController namaController = TextEditingController(
     text: namaDefault,
   );
@@ -47,6 +47,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   final TextEditingController komentarController = TextEditingController();
 
+  bool isLoading = false;
+
   @override
   void dispose() {
     namaController.dispose();
@@ -55,36 +57,92 @@ class _FeedbackPageState extends State<FeedbackPage> {
     super.dispose();
   }
 
-  // Fungsi validasi dan submit
-  void submitForm() {
-    if (formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Feedback berhasil dikirim')),
-      );
+  // =========================
+  // VALIDASI FORM
+  // =========================
 
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Hasil Feedback'),
-            content: Text(
-              'Nama: ${namaController.text}\n'
-              'NIM: ${nimController.text}\n'
-              'Komentar: ${komentarController.text}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Tutup'),
-              ),
-            ],
-          );
-        },
-      );
+  void submitForm() {
+    if (!formKey.currentState!.validate()) {
+      return;
     }
+
+    // Tampilkan dialog konfirmasi
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Konfirmasi'),
+          content: const Text('Apakah Anda yakin ingin mengirim feedback?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                processFeedback();
+              },
+              child: const Text('Kirim'),
+            ),
+          ],
+        );
+      },
+    );
   }
+
+  // =========================
+  // PROSES LOADING
+  // =========================
+
+  Future<void> processFeedback() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    // Simulasi proses selama 2 detik
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    setState(() {
+      isLoading = false;
+    });
+
+    // SnackBar setelah proses selesai
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Feedback berhasil disimpan')));
+
+    // Tampilkan hasil
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Feedback Tersimpan'),
+          content: Text(
+            'Nama: ${namaController.text}\n'
+            'NIM: ${nimController.text}\n'
+            'Komentar: ${komentarController.text}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // =========================
+  // BUILD
+  // =========================
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +170,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 24),
 
               // =========================
-              // FIELD NAMA
+              // NAMA
               // =========================
               TextFormField(
                 controller: namaController,
@@ -133,7 +191,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 16),
 
               // =========================
-              // FIELD NIM
+              // NIM
               // =========================
               TextFormField(
                 controller: nimController,
@@ -154,14 +212,14 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 16),
 
               // =========================
-              // FIELD KOMENTAR
+              // KOMENTAR
               // =========================
               TextFormField(
                 controller: komentarController,
                 maxLines: 5,
                 decoration: const InputDecoration(
                   labelText: 'Komentar',
-                  hintText: 'Tulis komentar minimal 5 karakter',
+                  hintText: 'Minimal 5 karakter',
                   border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                   prefixIcon: Icon(Icons.comment),
@@ -182,13 +240,24 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 24),
 
               // =========================
-              // BUTTON SUBMIT
+              // BUTTON / LOADING
               // =========================
-              ElevatedButton.icon(
-                onPressed: submitForm,
-                icon: const Icon(Icons.send),
-                label: const Text('Kirim Feedback'),
-              ),
+              if (isLoading)
+                const Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 12),
+                      Text('Menyimpan feedback...'),
+                    ],
+                  ),
+                )
+              else
+                ElevatedButton.icon(
+                  onPressed: submitForm,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Kirim Feedback'),
+                ),
             ],
           ),
         ),
