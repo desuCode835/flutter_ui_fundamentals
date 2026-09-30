@@ -11,263 +11,186 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'User Interaction',
+      title: 'Form Feedback',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MainPage(),
+      home: const FeedbackPage(),
     );
   }
 }
 
-// =========================
-// MAIN PAGE
-// =========================
-
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+class FeedbackPage extends StatefulWidget {
+  const FeedbackPage({super.key});
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<FeedbackPage> createState() => _FeedbackPageState();
 }
 
-class _MainPageState extends State<MainPage> {
-  int selectedIndex = 0;
+class _FeedbackPageState extends State<FeedbackPage> {
+  // GlobalKey untuk mengontrol Form
+  final formKey = GlobalKey<FormState>();
 
-  final List<Widget> pages = const [HomePage(), CoursesPage(), ProfilePage()];
+  // Konstanta identitas
+  static const String namaDefault = 'Gede Supadma';
+  static const String nimDefault = '2415051014';
 
-  // NavigationBar untuk layar Compact/Medium
-  NavigationBar buildNavigationBar() {
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          selectedIndex = index;
-        });
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.book_outlined),
-          selectedIcon: Icon(Icons.book),
-          label: 'Courses',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-    );
+  // Controller untuk mengambil isi input
+  final TextEditingController namaController = TextEditingController(
+    text: namaDefault,
+  );
+
+  final TextEditingController nimController = TextEditingController(
+    text: nimDefault,
+  );
+
+  final TextEditingController komentarController = TextEditingController();
+
+  @override
+  void dispose() {
+    namaController.dispose();
+    nimController.dispose();
+    komentarController.dispose();
+    super.dispose();
   }
 
-  // NavigationRail untuk layar Expanded
-  NavigationRail buildNavigationRail() {
-    return NavigationRail(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          selectedIndex = index;
-        });
-      },
-      labelType: NavigationRailLabelType.all,
-      destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: Text('Home'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.book_outlined),
-          selectedIcon: Icon(Icons.book),
-          label: Text('Courses'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: Text('Profile'),
-        ),
-      ],
-    );
+  // Fungsi validasi dan submit
+  void submitForm() {
+    if (formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Feedback berhasil dikirim')),
+      );
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Hasil Feedback'),
+            content: Text(
+              'Nama: ${namaController.text}\n'
+              'NIM: ${nimController.text}\n'
+              'Komentar: ${komentarController.text}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Tutup'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Compact dan Medium
-        if (constraints.maxWidth < 840) {
-          return Scaffold(
-            body: pages[selectedIndex],
-            bottomNavigationBar: buildNavigationBar(),
-          );
-        }
-
-        // Expanded
-        return Scaffold(
-          body: Row(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Form Feedback')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              buildNavigationRail(),
-              const VerticalDivider(width: 1),
-              Expanded(child: pages[selectedIndex]),
+              const Text(
+                'Feedback Praktikum',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                'Nama: Gede Supadma\n'
+                'NIM: 2415051014',
+              ),
+
+              const SizedBox(height: 24),
+
+              // =========================
+              // FIELD NAMA
+              // =========================
+              TextFormField(
+                controller: namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama wajib diisi';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // =========================
+              // FIELD NIM
+              // =========================
+              TextFormField(
+                controller: nimController,
+                decoration: const InputDecoration(
+                  labelText: 'NIM',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.badge),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'NIM wajib diisi';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // =========================
+              // FIELD KOMENTAR
+              // =========================
+              TextFormField(
+                controller: komentarController,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Komentar',
+                  hintText: 'Tulis komentar minimal 5 karakter',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                  prefixIcon: Icon(Icons.comment),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Komentar wajib diisi';
+                  }
+
+                  if (value.trim().length < 5) {
+                    return 'Komentar minimal 5 karakter';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // =========================
+              // BUTTON SUBMIT
+              // =========================
+              ElevatedButton.icon(
+                onPressed: submitForm,
+                icon: const Icon(Icons.send),
+                label: const Text('Kirim Feedback'),
+              ),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-// =========================
-// HOME PAGE
-// =========================
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.home, size: 70),
-            SizedBox(height: 16),
-            Text(
-              'Welcome!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('Nama: Gede Supadma'),
-            Text('NIM: 2415051014'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =========================
-// COURSES PAGE
-// =========================
-
-class CoursesPage extends StatelessWidget {
-  const CoursesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final courses = [
-      'Pemrograman Mobile',
-      'Pemrograman Web',
-      'Basis Data',
-      'Rekayasa Perangkat Lunak',
-    ];
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Courses')),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: courses.length,
-        itemBuilder: (context, index) {
-          return CourseCard(course: courses[index]);
-        },
-      ),
-    );
-  }
-}
-
-// =========================
-// COURSE CARD
-// =========================
-
-class CourseCard extends StatefulWidget {
-  final String course;
-
-  const CourseCard({super.key, required this.course});
-
-  @override
-  State<CourseCard> createState() => _CourseCardState();
-}
-
-class _CourseCardState extends State<CourseCard> {
-  bool isFavorite = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      // Long press
-      onLongPress: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Informasi: ${widget.course}')));
-      },
-
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: InkWell(
-          // Tap CourseCard
-          onTap: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('${widget.course} dipilih')));
-          },
-
-          borderRadius: BorderRadius.circular(12),
-
-          child: ListTile(
-            leading: const Icon(Icons.book),
-
-            title: Text(widget.course),
-
-            subtitle: const Text('Gede Supadma - 2415051014'),
-
-            // Tombol Favorite
-            trailing: IconButton(
-              onPressed: () {
-                setState(() {
-                  isFavorite = !isFavorite;
-                });
-              },
-              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// =========================
-// PROFILE PAGE
-// =========================
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(radius: 50, child: Icon(Icons.person, size: 55)),
-            SizedBox(height: 16),
-            Text(
-              'Gede Supadma',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('NIM: 2415051014'),
-          ],
         ),
       ),
     );
