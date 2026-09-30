@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Adaptive Navigation',
+      title: 'User Interaction',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
 }
 
 // =========================
-// MAIN PAGE / APP SHELL
+// MAIN PAGE
 // =========================
 
 class MainPage extends StatefulWidget {
@@ -37,6 +37,7 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> pages = const [HomePage(), CoursesPage(), ProfilePage()];
 
+  // NavigationBar untuk layar Compact/Medium
   NavigationBar buildNavigationBar() {
     return NavigationBar(
       selectedIndex: selectedIndex,
@@ -65,6 +66,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  // NavigationRail untuk layar Expanded
   NavigationRail buildNavigationRail() {
     return NavigationRail(
       selectedIndex: selectedIndex,
@@ -98,6 +100,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Compact dan Medium
         if (constraints.maxWidth < 840) {
           return Scaffold(
             body: pages[selectedIndex],
@@ -105,6 +108,7 @@ class _MainPageState extends State<MainPage> {
           );
         }
 
+        // Expanded
         return Scaffold(
           body: Row(
             children: [
@@ -120,7 +124,7 @@ class _MainPageState extends State<MainPage> {
 }
 
 // =========================
-// HOME
+// HOME PAGE
 // =========================
 
 class HomePage extends StatelessWidget {
@@ -151,7 +155,7 @@ class HomePage extends StatelessWidget {
 }
 
 // =========================
-// COURSES
+// COURSES PAGE
 // =========================
 
 class CoursesPage extends StatelessWidget {
@@ -172,13 +176,7 @@ class CoursesPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: courses.length,
         itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.book),
-              title: Text(courses[index]),
-              subtitle: const Text('Gede Supadma - 2415051014'),
-            ),
-          );
+          return CourseCard(course: courses[index]);
         },
       ),
     );
@@ -186,7 +184,68 @@ class CoursesPage extends StatelessWidget {
 }
 
 // =========================
-// PROFILE
+// COURSE CARD
+// =========================
+
+class CourseCard extends StatefulWidget {
+  final String course;
+
+  const CourseCard({super.key, required this.course});
+
+  @override
+  State<CourseCard> createState() => _CourseCardState();
+}
+
+class _CourseCardState extends State<CourseCard> {
+  bool isFavorite = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // Long press
+      onLongPress: () {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Informasi: ${widget.course}')));
+      },
+
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: InkWell(
+          // Tap CourseCard
+          onTap: () {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('${widget.course} dipilih')));
+          },
+
+          borderRadius: BorderRadius.circular(12),
+
+          child: ListTile(
+            leading: const Icon(Icons.book),
+
+            title: Text(widget.course),
+
+            subtitle: const Text('Gede Supadma - 2415051014'),
+
+            // Tombol Favorite
+            trailing: IconButton(
+              onPressed: () {
+                setState(() {
+                  isFavorite = !isFavorite;
+                });
+              },
+              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =========================
+// PROFILE PAGE
 // =========================
 
 class ProfilePage extends StatelessWidget {
