@@ -14,110 +14,104 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const ResponsivePage(),
+      home: const Stage4Page(),
     );
   }
 }
 
-// Layout Compact
-class CompactLayout extends StatelessWidget {
-  const CompactLayout({super.key});
+class Stage4Page extends StatelessWidget {
+  const Stage4Page({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      color: Colors.blue.shade100,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'COMPACT',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Text('Nama: $studentName'),
-          Text('NIM: $studentId'),
-          const SizedBox(height: 20),
-          const Text('Tampilan: 1 kolom'),
-        ],
-      ),
-    );
-  }
-}
+    final skills = [
+      'Dart',
+      'Flutter',
+      'UI Design',
+      'Git',
+      'Firebase',
+      'Database',
+    ];
 
-// Layout Medium
-class MediumLayout extends StatelessWidget {
-  const MediumLayout({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(30),
-      color: Colors.green.shade100,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'MEDIUM',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Text('Nama: $studentName'),
-          Text('NIM: $studentId'),
-          const SizedBox(height: 20),
-          const Text('Tampilan: 2 bagian'),
-        ],
-      ),
-    );
-  }
-}
-
-// Layout Expanded
-class ExpandedLayout extends StatelessWidget {
-  const ExpandedLayout({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      color: Colors.orange.shade100,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'EXPANDED',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Text('Nama: $studentName'),
-          Text('NIM: $studentId'),
-          const SizedBox(height: 20),
-          const Text('Tampilan: 3 bagian'),
-        ],
-      ),
-    );
-  }
-}
-
-// Halaman utama
-class ResponsivePage extends StatelessWidget {
-  const ResponsivePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tahap 3 - LayoutBuilder')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return const CompactLayout();
-          } else if (constraints.maxWidth < 840) {
-            return const MediumLayout();
-          } else {
-            return const ExpandedLayout();
-          }
-        },
+      appBar: AppBar(title: const Text('Tahap 4 - Expanded & Wrap')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nama: Gede Supadma',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Text('NIM: 2415051014', style: TextStyle(fontSize: 18)),
+
+            const SizedBox(height: 24),
+
+            const Text(
+              'Pembagian Panel 2:1',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    color: Colors.blue.shade200,
+                    child: const Text(
+                      'Panel A\nFlex 2',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                Expanded(
+                  child: Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    color: Colors.orange.shade200,
+                    child: const Text(
+                      'Panel B\nFlex 1',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            const Text(
+              'Skills',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: skills
+                  .map((skill) => Chip(label: Text(skill)))
+                  .toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
