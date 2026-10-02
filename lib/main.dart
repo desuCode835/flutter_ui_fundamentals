@@ -11,255 +11,259 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Feedback App',
+      title: 'Tahap 16 - Debugging',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const FeedbackPage(),
+      home: const DebuggingPage(),
     );
   }
 }
 
-class FeedbackPage extends StatefulWidget {
-  const FeedbackPage({super.key});
+class DebuggingPage extends StatefulWidget {
+  const DebuggingPage({super.key});
 
   @override
-  State<FeedbackPage> createState() => _FeedbackPageState();
+  State<DebuggingPage> createState() => _DebuggingPageState();
 }
 
-class _FeedbackPageState extends State<FeedbackPage> {
-  // GlobalKey untuk Form
-  final formKey = GlobalKey<FormState>();
+class _DebuggingPageState extends State<DebuggingPage> {
+  final String studentName = 'Gede Supadma';
+  final String studentId = '2415051014';
 
-  // Identitas
-  static const String namaDefault = 'Gede Supadma';
-  static const String nimDefault = '2415051014';
+  bool _isNavigating = false;
 
-  // Controller
-  final TextEditingController namaController = TextEditingController(
-    text: namaDefault,
-  );
-
-  final TextEditingController nimController = TextEditingController(
-    text: nimDefault,
-  );
-
-  final TextEditingController komentarController = TextEditingController();
-
-  bool isLoading = false;
-
-  @override
-  void dispose() {
-    namaController.dispose();
-    nimController.dispose();
-    komentarController.dispose();
-    super.dispose();
-  }
-
-  // =========================
-  // VALIDASI FORM
-  // =========================
-
-  void submitForm() {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Tampilkan dialog konfirmasi
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Konfirmasi'),
-          content: const Text('Apakah Anda yakin ingin mengirim feedback?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                processFeedback();
-              },
-              child: const Text('Kirim'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // =========================
-  // PROSES LOADING
-  // =========================
-
-  Future<void> processFeedback() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    // Simulasi proses selama 2 detik
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
+  void _openDetail() async {
+    // Mencegah tombol ditekan berkali-kali
+    if (_isNavigating) return;
 
     setState(() {
-      isLoading = false;
+      _isNavigating = true;
     });
 
-    // SnackBar setelah proses selesai
-    ScaffoldMessenger.of(
+    await Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Feedback berhasil disimpan')));
-
-    // Tampilkan hasil
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Feedback Tersimpan'),
-          content: Text(
-            'Nama: ${namaController.text}\n'
-            'NIM: ${nimController.text}\n'
-            'Komentar: ${komentarController.text}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
+      MaterialPageRoute(builder: (context) => const DetailPage()),
     );
-  }
 
-  // =========================
-  // BUILD
-  // =========================
+    if (mounted) {
+      setState(() {
+        _isNavigating = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Form Feedback')),
+      appBar: AppBar(title: const Text('Tahap 16 - Debugging')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Feedback Praktikum',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                'Nama: Gede Supadma\n'
-                'NIM: 2415051014',
-              ),
-
-              const SizedBox(height: 24),
-
-              // =========================
-              // NAMA
-              // =========================
-              TextFormField(
-                controller: namaController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Identitas
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nama: $studentName',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'NIM: $studentId',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Nama wajib diisi';
-                  }
-
-                  return null;
-                },
               ),
+            ),
 
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-              // =========================
-              // NIM
-              // =========================
-              TextFormField(
-                controller: nimController,
-                decoration: const InputDecoration(
-                  labelText: 'NIM',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'NIM wajib diisi';
-                  }
+            // KASUS A
+            const Text(
+              'Kasus A - RenderFlex Overflow',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
 
-                  return null;
-                },
+            const SizedBox(height: 8),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info),
+                  const SizedBox(width: 8),
 
-              const SizedBox(height: 16),
-
-              // =========================
-              // KOMENTAR
-              // =========================
-              TextFormField(
-                controller: komentarController,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Komentar',
-                  hintText: 'Minimal 5 karakter',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                  prefixIcon: Icon(Icons.comment),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Komentar wajib diisi';
-                  }
-
-                  if (value.trim().length < 5) {
-                    return 'Komentar minimal 5 karakter';
-                  }
-
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // =========================
-              // BUTTON / LOADING
-              // =========================
-              if (isLoading)
-                const Center(
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 12),
-                      Text('Menyimpan feedback...'),
-                    ],
+                  // Expanded memberikan batas lebar kepada Text
+                  // sehingga teks dapat melakukan wrapping.
+                  Expanded(
+                    child: Text(
+                      '$studentId - $studentName - '
+                      'teks sangat panjang yang sebelumnya dapat '
+                      'menyebabkan RenderFlex overflow pada Row.',
+                    ),
                   ),
-                )
-              else
-                ElevatedButton.icon(
-                  onPressed: submitForm,
-                  icon: const Icon(Icons.send),
-                  label: const Text('Kirim Feedback'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // KASUS B
+            const Text(
+              'Kasus B - ListView dalam Column',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Expanded memberikan batas tinggi kepada ListView.
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                itemCount: 5,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading: CircleAvatar(child: Text('${index + 1}')),
+                    title: Text('Data pembelajaran ${index + 1}'),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // KASUS C
+            const Text(
+              'Kasus C - Keyboard Overflow',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'Form dibuat scrollable agar tetap dapat diakses '
+              'ketika keyboard muncul.',
+            ),
+
+            const SizedBox(height: 8),
+
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Nama',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            TextField(
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Komentar',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // KASUS D
+            const Text(
+              'Kasus D - Navigasi Ganda',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'Tombol dikunci sementara ketika proses navigasi '
+              'sedang berlangsung.',
+            ),
+
+            const SizedBox(height: 8),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isNavigating ? null : _openDetail,
+                icon: const Icon(Icons.open_in_new),
+                label: Text(
+                  _isNavigating ? 'Membuka halaman...' : 'Buka Detail',
                 ),
-            ],
-          ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Catatan
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Catatan Debugging',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'A: Expanded membatasi lebar Text sehingga '
+                      'teks dapat turun ke baris berikutnya.',
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'B: ListView membutuhkan batas tinggi agar '
+                      'tidak memiliki tinggi tak terbatas.',
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'C: SingleChildScrollView memungkinkan halaman '
+                      'digeser ketika keyboard muncul.',
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'D: Tombol dinonaktifkan sementara agar route '
+                      'tidak ter-push berkali-kali.',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DetailPage extends StatelessWidget {
+  const DetailPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detail')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Kembali'),
         ),
       ),
     );
