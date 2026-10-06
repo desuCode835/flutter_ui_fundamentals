@@ -139,7 +139,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Compact dan Medium
         if (constraints.maxWidth < 840) {
           return Scaffold(
             body: pages[selectedIndex],
@@ -147,7 +146,6 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           );
         }
 
-        // Expanded
         return Scaffold(
           body: Row(
             children: [
@@ -179,26 +177,19 @@ class HomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 40),
-
             const Icon(Icons.school, size: 90),
-
             const SizedBox(height: 20),
-
             const Text(
               'Course Explorer',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 12),
-
             const Text(
               'Aplikasi untuk melihat daftar course '
               'dan informasi pembelajaran.',
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 30),
-
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
@@ -218,9 +209,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             ElevatedButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -243,8 +232,19 @@ class HomePage extends StatelessWidget {
 // COURSES PAGE
 // ======================================================
 
-class CoursesPage extends StatelessWidget {
+class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
+
+  @override
+  State<CoursesPage> createState() => _CoursesPageState();
+}
+
+class _CoursesPageState extends State<CoursesPage> {
+  // ====================================================
+  // SHARED STATE DI PARENT
+  // ====================================================
+
+  bool isFavorite = false;
 
   int getColumns(double width) {
     if (width < 600) {
@@ -270,6 +270,35 @@ class CoursesPage extends StatelessWidget {
     return 1.3;
   }
 
+  // ====================================================
+  // CALLBACK DARI CHILD
+  // ====================================================
+
+  void changeFavorite(bool value) {
+    setState(() {
+      isFavorite = value;
+    });
+  }
+
+  // ====================================================
+  // BUKA DETAIL
+  // ====================================================
+
+  void openDetail(Course course) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return CourseDetailPage(
+            course: course,
+            isFavorite: isFavorite,
+            onFavoriteChanged: changeFavorite,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,7 +317,14 @@ class CoursesPage extends StatelessWidget {
               childAspectRatio: getAspectRatio(columns),
             ),
             itemBuilder: (context, index) {
-              return CourseCard(course: courses[index]);
+              return CourseCard(
+                course: courses[index],
+                isFavorite: isFavorite,
+                onFavoriteChanged: changeFavorite,
+                onOpenDetail: () {
+                  openDetail(courses[index]);
+                },
+              );
             },
           );
         },
@@ -298,41 +334,38 @@ class CoursesPage extends StatelessWidget {
 }
 
 // ======================================================
-// REUSABLE COURSE CARD
+// COURSE CARD
 // ======================================================
 
-class CourseCard extends StatefulWidget {
+class CourseCard extends StatelessWidget {
   final Course course;
 
-  const CourseCard({super.key, required this.course});
+  // State diterima dari parent
+  final bool isFavorite;
 
-  @override
-  State<CourseCard> createState() => _CourseCardState();
-}
+  // Callback untuk mengubah state di parent
+  final ValueChanged<bool> onFavoriteChanged;
 
-class _CourseCardState extends State<CourseCard> {
-  bool isFavorite = false;
+  // Callback untuk membuka detail
+  final VoidCallback onOpenDetail;
 
-  void openDetail() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CourseDetailPage(course: widget.course),
-      ),
-    );
-  }
+  const CourseCard({
+    super.key,
+    required this.course,
+    required this.isFavorite,
+    required this.onFavoriteChanged,
+    required this.onOpenDetail,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: openDetail,
+        onTap: onOpenDetail,
         onLongPress: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${widget.course.title} - ${widget.course.code}'),
-            ),
+            SnackBar(content: Text('${course.title} - ${course.code}')),
           );
         },
         child: Padding(
@@ -349,7 +382,7 @@ class _CourseCardState extends State<CourseCard> {
                     children: [
                       Expanded(
                         child: Text(
-                          widget.course.title,
+                          course.title,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -358,15 +391,14 @@ class _CourseCardState extends State<CourseCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-
                       IconButton(
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
-                          setState(() {
-                            isFavorite = !isFavorite;
-                          });
+                          // Child tidak mengubah state sendiri.
+                          // Child mengirim perubahan ke parent.
+                          onFavoriteChanged(!isFavorite);
                         },
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -375,26 +407,17 @@ class _CourseCardState extends State<CourseCard> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 4),
-
-                  Text(
-                    widget.course.code,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+                  Text(course.code, style: const TextStyle(color: Colors.grey)),
                 ],
               ),
-
               const SizedBox(height: 8),
-
               Row(
                 children: [
-                  Text('${widget.course.credits} SKS'),
-
+                  Text('${course.credits} SKS'),
                   const Spacer(),
-
                   Text(
-                    widget.course.status,
+                    course.status,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -411,17 +434,21 @@ class _CourseCardState extends State<CourseCard> {
 // COURSE DETAIL
 // ======================================================
 
-class CourseDetailPage extends StatefulWidget {
+class CourseDetailPage extends StatelessWidget {
   final Course course;
 
-  const CourseDetailPage({super.key, required this.course});
+  // State berasal dari parent
+  final bool isFavorite;
 
-  @override
-  State<CourseDetailPage> createState() => _CourseDetailPageState();
-}
+  // Callback untuk mengubah state parent
+  final ValueChanged<bool> onFavoriteChanged;
 
-class _CourseDetailPageState extends State<CourseDetailPage> {
-  bool isFavorite = false;
+  const CourseDetailPage({
+    super.key,
+    required this.course,
+    required this.isFavorite,
+    required this.onFavoriteChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -433,55 +460,40 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(Icons.book, size: 80),
-
             const SizedBox(height: 20),
-
             Text(
-              widget.course.title,
+              course.title,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 10),
-
+            Text('Kode: ${course.code}', style: const TextStyle(fontSize: 17)),
             Text(
-              'Kode: ${widget.course.code}',
+              'SKS: ${course.credits}',
               style: const TextStyle(fontSize: 17),
             ),
-
             Text(
-              'SKS: ${widget.course.credits}',
+              'Status: ${course.status}',
               style: const TextStyle(fontSize: 17),
             ),
-
-            Text(
-              'Status: ${widget.course.status}',
-              style: const TextStyle(fontSize: 17),
-            ),
-
             const SizedBox(height: 30),
-
             const Text(
               'Mahasiswa',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
             const Text('Gede Supadma'),
             const Text('NIM: 2415051014'),
-
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  setState(() {
-                    isFavorite = !isFavorite;
-                  });
+                  // Child mengirim perubahan ke parent
+                  onFavoriteChanged(!isFavorite);
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        isFavorite
+                        !isFavorite
                             ? 'Course ditambahkan ke favorite'
                             : 'Course dihapus dari favorite',
                       ),
@@ -515,18 +527,13 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           children: [
             const CircleAvatar(radius: 45, child: Icon(Icons.person, size: 50)),
-
             const SizedBox(height: 12),
-
             const Text(
               'Gede Supadma',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-
             const Text('NIM: 2415051014'),
-
             const SizedBox(height: 30),
-
             const FeedbackForm(),
           ],
         ),
@@ -536,7 +543,7 @@ class ProfilePage extends StatelessWidget {
 }
 
 // ======================================================
-// REUSABLE FEEDBACK FORM
+// FEEDBACK FORM
 // ======================================================
 
 class FeedbackForm extends StatefulWidget {
@@ -632,9 +639,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
-
           const SizedBox(height: 16),
-
           TextFormField(
             controller: namaController,
             decoration: const InputDecoration(
@@ -650,9 +655,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
               return null;
             },
           ),
-
           const SizedBox(height: 12),
-
           TextFormField(
             controller: nimController,
             decoration: const InputDecoration(
@@ -668,9 +671,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
               return null;
             },
           ),
-
           const SizedBox(height: 12),
-
           TextFormField(
             controller: komentarController,
             maxLines: 4,
@@ -693,9 +694,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
               return null;
             },
           ),
-
           const SizedBox(height: 16),
-
           if (isLoading)
             const Column(
               children: [
