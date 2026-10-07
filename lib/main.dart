@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'course_state.dart';
+import 'models/course.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CourseState(),
-      child: const MyApp(),
-    ),
+    ChangeNotifierProvider(create: (_) => CourseState(), child: const MyApp()),
   );
 }
 
@@ -35,20 +34,6 @@ class MyApp extends StatelessWidget {
 // ======================================================
 // DATA COURSE
 // ======================================================
-
-class Course {
-  final String code;
-  final String title;
-  final int credits;
-  final String status;
-
-  const Course({
-    required this.code,
-    required this.title,
-    required this.credits,
-    required this.status,
-  });
-}
 
 const List<Course> courses = [
   Course(
@@ -280,9 +265,7 @@ class _CoursesPageState extends State<CoursesPage> {
       context,
       MaterialPageRoute(
         builder: (context) {
-          return CourseDetailPage(
-            course: course,
-          );
+          return CourseDetailPage(course: course);
         },
       ),
     );
@@ -399,7 +382,9 @@ class CourseCard extends StatelessWidget {
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
                           // Menggunakan context.read untuk memanggil aksi
-                          context.read<CourseState>().toggleFavorite(course.code);
+                          context.read<CourseState>().toggleFavorite(
+                            course.code,
+                          );
                         },
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -438,10 +423,7 @@ class CourseCard extends StatelessWidget {
 class CourseDetailPage extends StatelessWidget {
   final Course course;
 
-  const CourseDetailPage({
-    super.key,
-    required this.course,
-  });
+  const CourseDetailPage({super.key, required this.course});
 
   @override
   Widget build(BuildContext context) {
@@ -483,7 +465,9 @@ class CourseDetailPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  final isFav = context.read<CourseState>().favorites.contains(course.code);
+                  final isFav = context.read<CourseState>().favorites.contains(
+                    course.code,
+                  );
                   context.read<CourseState>().toggleFavorite(course.code);
 
                   ScaffoldMessenger.of(context).showSnackBar(
