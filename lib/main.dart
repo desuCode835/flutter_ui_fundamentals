@@ -240,11 +240,19 @@ class CoursesPage extends StatefulWidget {
 }
 
 class _CoursesPageState extends State<CoursesPage> {
+  final ValueNotifier<int> favoriteCount = ValueNotifier<int>(0);
+
   // ====================================================
   // SHARED STATE DI PARENT
   // ====================================================
 
   bool isFavorite = false;
+
+  @override
+  void dispose() {
+    favoriteCount.dispose();
+    super.dispose();
+  }
 
   int getColumns(double width) {
     if (width < 600) {
@@ -303,31 +311,77 @@ class _CoursesPageState extends State<CoursesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Course Explorer')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = getColumns(constraints.maxWidth);
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: courses.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: getAspectRatio(columns),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                ValueListenableBuilder<int>(
+                  valueListenable: favoriteCount,
+                  builder: (context, value, child) {
+                    return Text(
+                      'Jumlah Favorite: $value',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        favoriteCount.value++;
+                      },
+                      child: const Text('Tambah Favorite'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (favoriteCount.value > 0) {
+                          favoriteCount.value--;
+                        }
+                      },
+                      child: const Text('Kurangi Favorite'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            itemBuilder: (context, index) {
-              return CourseCard(
-                course: courses[index],
-                isFavorite: isFavorite,
-                onFavoriteChanged: changeFavorite,
-                onOpenDetail: () {
-                  openDetail(courses[index]);
-                },
-              );
-            },
-          );
-        },
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = getColumns(constraints.maxWidth);
+
+                return GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: courses.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: getAspectRatio(columns),
+                  ),
+                  itemBuilder: (context, index) {
+                    return CourseCard(
+                      course: courses[index],
+                      isFavorite: isFavorite,
+                      onFavoriteChanged: changeFavorite,
+                      onOpenDetail: () {
+                        openDetail(courses[index]);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
