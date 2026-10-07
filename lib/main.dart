@@ -247,20 +247,6 @@ class CoursesPage extends StatefulWidget {
 }
 
 class _CoursesPageState extends State<CoursesPage> {
-  final ValueNotifier<int> favoriteCount = ValueNotifier<int>(0);
-
-  // ====================================================
-  // SHARED STATE DI PARENT
-  // ====================================================
-
-  bool isFavorite = false;
-
-  @override
-  void dispose() {
-    favoriteCount.dispose();
-    super.dispose();
-  }
-
   int getColumns(double width) {
     if (width < 600) {
       return 1;
@@ -286,16 +272,6 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 
   // ====================================================
-  // CALLBACK DARI CHILD
-  // ====================================================
-
-  void changeFavorite(bool value) {
-    setState(() {
-      isFavorite = value;
-    });
-  }
-
-  // ====================================================
   // BUKA DETAIL
   // ====================================================
 
@@ -306,8 +282,6 @@ class _CoursesPageState extends State<CoursesPage> {
         builder: (context) {
           return CourseDetailPage(
             course: course,
-            isFavorite: isFavorite,
-            onFavoriteChanged: changeFavorite,
           );
         },
       ),
@@ -322,42 +296,16 @@ class _CoursesPageState extends State<CoursesPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                ValueListenableBuilder<int>(
-                  valueListenable: favoriteCount,
-                  builder: (context, value, child) {
-                    return Text(
-                      'Jumlah Favorite: $value',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        favoriteCount.value++;
-                      },
-                      child: const Text('Tambah Favorite'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (favoriteCount.value > 0) {
-                          favoriteCount.value--;
-                        }
-                      },
-                      child: const Text('Kurangi Favorite'),
-                    ),
-                  ],
-                ),
-              ],
+            child: Consumer<CourseState>(
+              builder: (context, courseState, child) {
+                return Text(
+                  'Jumlah Favorite: ${courseState.favorites.length}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
             ),
           ),
           Expanded(
@@ -377,8 +325,6 @@ class _CoursesPageState extends State<CoursesPage> {
                   itemBuilder: (context, index) {
                     return CourseCard(
                       course: courses[index],
-                      isFavorite: isFavorite,
-                      onFavoriteChanged: changeFavorite,
                       onOpenDetail: () {
                         openDetail(courses[index]);
                       },
@@ -401,25 +347,20 @@ class _CoursesPageState extends State<CoursesPage> {
 class CourseCard extends StatelessWidget {
   final Course course;
 
-  // State diterima dari parent
-  final bool isFavorite;
-
-  // Callback untuk mengubah state di parent
-  final ValueChanged<bool> onFavoriteChanged;
-
   // Callback untuk membuka detail
   final VoidCallback onOpenDetail;
 
   const CourseCard({
     super.key,
     required this.course,
-    required this.isFavorite,
-    required this.onFavoriteChanged,
     required this.onOpenDetail,
   });
 
   @override
   Widget build(BuildContext context) {
+    final courseState = context.watch<CourseState>();
+    final isFavorite = courseState.favorites.contains(course.code);
+
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -457,9 +398,8 @@ class CourseCard extends StatelessWidget {
                         constraints: const BoxConstraints(),
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
-                          // Child tidak mengubah state sendiri.
-                          // Child mengirim perubahan ke parent.
-                          onFavoriteChanged(!isFavorite);
+                          // Menggunakan context.read untuk memanggil aksi
+                          context.read<CourseState>().toggleFavorite(course.code);
                         },
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -498,21 +438,16 @@ class CourseCard extends StatelessWidget {
 class CourseDetailPage extends StatelessWidget {
   final Course course;
 
-  // State berasal dari parent
-  final bool isFavorite;
-
-  // Callback untuk mengubah state parent
-  final ValueChanged<bool> onFavoriteChanged;
-
   const CourseDetailPage({
     super.key,
     required this.course,
-    required this.isFavorite,
-    required this.onFavoriteChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final courseState = context.watch<CourseState>();
+    final isFavorite = courseState.favorites.contains(course.code);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Course Detail')),
       body: SingleChildScrollView(
@@ -548,13 +483,13 @@ class CourseDetailPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Child mengirim perubahan ke parent
-                  onFavoriteChanged(!isFavorite);
+                  final isFav = context.read<CourseState>().favorites.contains(course.code);
+                  context.read<CourseState>().toggleFavorite(course.code);
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        !isFavorite
+                        !isFav
                             ? 'Course ditambahkan ke favorite'
                             : 'Course dihapus dari favorite',
                       ),
