@@ -3,13 +3,13 @@
 
 import 'package:flutter/foundation.dart';
 
-import 'models/course.dart';
-import 'repositories/course_repository.dart';
+import '../models/course.dart';
+import '../repositories/course_repository.dart';
 
-class CourseState extends ChangeNotifier {
+class CourseProvider extends ChangeNotifier {
   final CourseRepository repository;
 
-  CourseState(this.repository);
+  CourseProvider(this.repository);
 
   List<Course> courses = [];
   bool isLoading = false;
@@ -27,8 +27,8 @@ class CourseState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //Nama : Gede Supadma
-  //NIM : 2415051014
+  // Nama : Gede Supadma
+  // NIM : 2415051014
   Future<void> loadCourses() async {
     isLoading = true;
     error = null;

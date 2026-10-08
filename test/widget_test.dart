@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:flutter_ui_fundamentals/course_state.dart';
 import 'package:flutter_ui_fundamentals/main.dart';
 import 'package:flutter_ui_fundamentals/models/course.dart';
+import 'package:flutter_ui_fundamentals/providers/course_provider.dart';
 import 'package:flutter_ui_fundamentals/repositories/course_repository.dart';
 import 'package:flutter_ui_fundamentals/services/course_service.dart';
 
@@ -29,7 +28,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider(
-        create: (_) => CourseState(repository),
+        create: (_) => CourseProvider(repository),
         child: const MyApp(),
       ),
     );
@@ -38,4 +37,5 @@ void main() {
     expect(find.text('Nama: Gede Supadma'), findsOneWidget);
   });
 }
+
 
