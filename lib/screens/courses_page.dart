@@ -56,11 +56,21 @@ class _CoursesPageState extends State<CoursesPage> {
     );
   }
 
+  // ===========================================================================
+  // TAHAP 15 - KASUS D: PERUBAHAN STATE SETELAH ASYNC (addPostFrameCallback & mounted)
+  // ===========================================================================
   @override
   void initState() {
     super.initState();
 
+    // Menggunakan addPostFrameCallback agar loadCourses() dipanggil setelah frame pertama selesai dibangun
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        debugPrint('[DEBUG - Kasus D] CoursesPage unmounted sebelum pemanggilan async loadCourses.');
+        return;
+      }
+
+      debugPrint('[DEBUG - Kasus D] CoursesPage mounted, memanggil loadCourses() secara aman.');
       context.read<CourseProvider>().loadCourses();
     });
   }

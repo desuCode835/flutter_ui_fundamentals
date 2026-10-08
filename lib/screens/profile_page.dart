@@ -95,15 +95,24 @@ class _FeedbackFormState extends State<FeedbackForm> {
     );
   }
 
+  // ===========================================================================
+  // TAHAP 15 - KASUS D: PENGUJIAN ASYNC & MOUNTED CHECK
+  // ===========================================================================
   Future<void> saveFeedback() async {
     setState(() {
       isLoading = true;
     });
 
+    debugPrint('[DEBUG - Kasus D] saveFeedback: Operasi async dimulai...');
     await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+    // Pengecekan apakah widget masih terpasang pada widget tree setelah async
+    if (!mounted) {
+      debugPrint('[DEBUG - Kasus D] Widget unmounted, setState dibatalkan demi keamanan.');
+      return;
+    }
 
+    debugPrint('[DEBUG - Kasus D] Widget mounted, memanggil setState() untuk mematikan loading.');
     setState(() {
       isLoading = false;
     });

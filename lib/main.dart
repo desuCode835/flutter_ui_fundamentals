@@ -12,13 +12,30 @@ import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'services/course_service.dart';
 
+// ===========================================================================
+// TAHAP 15 - KASUS B: CONTEXT DI ATAS / DI LUAR PROVIDER
+// ===========================================================================
+// Penjelasan Kasus B:
+// ChangeNotifierProvider harus ditempatkan di atas widget tree yang membutuhkannya.
+// Jika context.read<CourseProvider>() atau context.watch<CourseProvider>()
+// dipanggil pada context yang berada di luar atau di atas ChangeNotifierProvider,
+// Flutter akan melempar runtime exception:
+// "ProviderNotFoundException: Could not find the correct Provider<CourseProvider> above this Widget"
+//
+// Posisi yang benar: ChangeNotifierProvider membungkus MyApp di dalam main(),
+// sehingga seluruh widget turunan di dalam MyApp memiliki akses context yang valid.
 void main() {
   final service = CourseService();
   final repository = CourseRepository(service);
 
   runApp(
     ChangeNotifierProvider(
-      create: (_) => CourseProvider(repository),
+      create: (_) {
+        debugPrint(
+          '[DEBUG - Kasus B] ChangeNotifierProvider berhasil diinisialisasi membungkus root tree.',
+        );
+        return CourseProvider(repository);
+      },
       child: const MyApp(),
     ),
   );
