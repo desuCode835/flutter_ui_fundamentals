@@ -12,8 +12,6 @@ import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'services/course_service.dart';
 
-//Nama : Gede Supadma
-//NIM : 2415051014
 void main() {
   final service = CourseService();
   final repository = CourseRepository(service);
@@ -37,10 +35,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Course Explorer',
+      title: 'Course Explorer v2',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1976D2),
+          primary: const Color(0xFF1976D2),
+        ),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1976D2),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+        ),
       ),
       home: const ResponsiveShell(),
     );

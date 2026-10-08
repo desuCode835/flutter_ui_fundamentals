@@ -22,7 +22,7 @@ class MockCourseService extends CourseService {
 }
 
 void main() {
-  testWidgets('Course Explorer smoke test', (WidgetTester tester) async {
+  testWidgets('Course Explorer v2 smoke test', (WidgetTester tester) async {
     final service = MockCourseService();
     final repository = CourseRepository(service);
 
@@ -33,9 +33,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Course Explorer'), findsWidgets);
+    expect(find.text('Course Explorer v2'), findsWidgets);
     expect(find.text('Nama: Gede Supadma'), findsOneWidget);
   });
 }
-
-

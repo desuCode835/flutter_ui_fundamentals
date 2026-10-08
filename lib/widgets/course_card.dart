@@ -19,12 +19,30 @@ class CourseCard extends StatelessWidget {
     required this.onOpenDetail,
   });
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return const Color(0xFF2E7D32);
+      case 'active':
+        return const Color(0xFF1976D2);
+      case 'planned':
+        return const Color(0xFFE65100);
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
     final isFavorite = courseProvider.isFavorite(course.code);
 
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.blue.shade100),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onOpenDetail,
@@ -49,8 +67,9 @@ class CourseCard extends StatelessWidget {
                         child: Text(
                           course.title,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFF0D47A1),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -61,14 +80,13 @@ class CourseCard extends StatelessWidget {
                         constraints: const BoxConstraints(),
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
-                          // Menggunakan context.read untuk memanggil aksi
                           context.read<CourseProvider>().toggleFavorite(
                             course.code,
                           );
                         },
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite ? Colors.red : null,
+                          color: isFavorite ? Colors.red : Colors.grey,
                         ),
                         tooltip: isFavorite
                             ? 'Hapus dari Favorite'
@@ -76,18 +94,27 @@ class CourseCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(course.code, style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text('${course.credits} SKS'),
-                  const Spacer(),
+                  const SizedBox(height: 6),
                   Text(
                     course.status,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: _getStatusColor(course.status),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    course.code,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${course.credits} SKS',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ],
               ),
