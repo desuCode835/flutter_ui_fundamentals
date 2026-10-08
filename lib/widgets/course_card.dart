@@ -22,7 +22,7 @@ class CourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
-    final isFavorite = courseProvider.favorites.contains(course.code);
+    final isFavorite = courseProvider.isFavorite(course.code);
 
     return Card(
       child: InkWell(
@@ -70,6 +70,9 @@ class CourseCard extends StatelessWidget {
                           isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: isFavorite ? Colors.red : null,
                         ),
+                        tooltip: isFavorite
+                            ? 'Hapus dari Favorite'
+                            : 'Tambah ke Favorite',
                       ),
                     ],
                   ),

@@ -7,10 +7,13 @@ import 'package:provider/provider.dart';
 import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
 import 'screens/courses_page.dart';
+import 'screens/favorites_page.dart';
 import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'services/course_service.dart';
 
+//Nama : Gede Supadma
+//NIM : 2415051014
 void main() {
   final service = CourseService();
   final repository = CourseRepository(service);
@@ -58,7 +61,12 @@ class ResponsiveShell extends StatefulWidget {
 class _ResponsiveShellState extends State<ResponsiveShell> {
   int selectedIndex = 0;
 
-  final List<Widget> pages = const [HomePage(), CoursesPage(), ProfilePage()];
+  final List<Widget> pages = const [
+    HomePage(),
+    CoursesPage(),
+    FavoritesPage(),
+    ProfilePage(),
+  ];
 
   NavigationBar buildNavigationBar() {
     return NavigationBar(
@@ -78,6 +86,11 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           icon: Icon(Icons.book_outlined),
           selectedIcon: Icon(Icons.book),
           label: 'Courses',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.favorite_outline),
+          selectedIcon: Icon(Icons.favorite),
+          label: 'Favorites',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
@@ -107,6 +120,11 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
           icon: Icon(Icons.book_outlined),
           selectedIcon: Icon(Icons.book),
           label: Text('Courses'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.favorite_outline),
+          selectedIcon: Icon(Icons.favorite),
+          label: Text('Favorites'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.person_outline),
