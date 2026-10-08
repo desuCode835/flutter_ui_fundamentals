@@ -103,3 +103,16 @@ lib/
    ```bash
    flutter run
    ```
+
+## Finalisasi Pertemuan 6
+
+Project Course Explorer v2 telah menyelesaikan implementasi state management
+dan arsitektur aplikasi menggunakan Provider, ChangeNotifier, Repository,
+Service, serta pemisahan folder berdasarkan tanggung jawab.
+
+Identitas:
+- Nama: Gede Supadma
+- NIM: 2415051014
+
+Repository:
+https://github.com/desuCode835/flutter_ui_fundamentals
