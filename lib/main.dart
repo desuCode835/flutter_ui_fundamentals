@@ -3,10 +3,18 @@ import 'package:provider/provider.dart';
 
 import 'course_state.dart';
 import 'models/course.dart';
+import 'repositories/course_repository.dart';
+import 'services/course_service.dart';
 
 void main() {
+  final service = CourseService();
+  final repository = CourseRepository(service);
+
   runApp(
-    ChangeNotifierProvider(create: (_) => CourseState(), child: const MyApp()),
+    ChangeNotifierProvider(
+      create: (_) => CourseState(repository),
+      child: const MyApp(),
+    ),
   );
 }
 
@@ -30,29 +38,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// ======================================================
-// DATA COURSE
-// ======================================================
-
-const List<Course> courses = [
-  Course(
-    code: 'MOB04',
-    title: 'Responsive Layout',
-    credits: 3,
-    status: 'Active',
-  ),
-  Course(code: 'MOB05', title: 'Navigation', credits: 3, status: 'Planned'),
-  Course(code: 'MOB06', title: 'Interaction', credits: 3, status: 'Planned'),
-  Course(
-    code: 'MOB07',
-    title: 'Form Validation',
-    credits: 3,
-    status: 'Planned',
-  ),
-  Course(code: 'MOB08', title: 'Feedback UI', credits: 3, status: 'Planned'),
-  Course(code: 'MOB09', title: 'Mini Project', credits: 4, status: 'Active'),
-];
 
 // ======================================================
 // RESPONSIVE SHELL
@@ -272,48 +257,73 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CourseState>().loadCourses();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final courseState = context.watch<CourseState>();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Course Explorer')),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Consumer<CourseState>(
-              builder: (context, courseState, child) {
-                return Text(
-                  'Jumlah Favorite: ${courseState.favorites.length}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              },
+            child: Text(
+              'Jumlah Favorite: ${courseState.favorites.length}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = getColumns(constraints.maxWidth);
+            child: Builder(
+              builder: (context) {
+                if (courseState.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (courseState.error != null) {
+                  return Center(
+                    child: Text(
+                      'Terjadi kesalahan: ${courseState.error}',
+                    ),
+                  );
+                } else {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = getColumns(constraints.maxWidth);
 
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: courses.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: getAspectRatio(columns),
-                  ),
-                  itemBuilder: (context, index) {
-                    return CourseCard(
-                      course: courses[index],
-                      onOpenDetail: () {
-                        openDetail(courses[index]);
-                      },
-                    );
-                  },
-                );
+                      return GridView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: courseState.courses.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: getAspectRatio(columns),
+                        ),
+                        itemBuilder: (context, index) {
+                          final course = courseState.courses[index];
+
+                          return CourseCard(
+                            course: course,
+                            onOpenDetail: () {
+                              openDetail(course);
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
               },
             ),
           ),
