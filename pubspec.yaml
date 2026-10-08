@@ -60,7 +60,7 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/data/
+    - assets/data/student_data.json
     - assets/data/
 
   # An image asset can refer to one or more resolution-specific "variants", see
