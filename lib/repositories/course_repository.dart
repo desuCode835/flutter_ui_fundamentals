@@ -14,9 +14,9 @@ class CourseRepository {
   }
 
   // ===========================================================================
-  // TAHAP 2: METHOD HTTP GET POSTS
+  // TAHAP 2 & 3: METHOD HTTP GET POSTS (MODEL COURSE)
   // ===========================================================================
-  Future<List<dynamic>> getPosts({String? endpoint}) {
+  Future<List<Course>> getPosts({String? endpoint}) {
     return service.fetchPosts(endpoint: endpoint);
   }
 }

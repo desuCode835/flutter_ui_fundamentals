@@ -53,9 +53,7 @@ class FavoritesPage extends StatelessWidget {
     final favoriteCourses = courseProvider.favoriteCourses;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Favorite Courses'),
-      ),
+      appBar: AppBar(title: const Text('Favorite Courses')),
       body: favoriteCourses.isEmpty
           ? Center(
               child: Column(

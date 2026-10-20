@@ -66,11 +66,15 @@ class _CoursesPageState extends State<CoursesPage> {
     // Menggunakan addPostFrameCallback agar loadCourses() dipanggil setelah frame pertama selesai dibangun
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
-        debugPrint('[DEBUG - Kasus D] CoursesPage unmounted sebelum pemanggilan async loadCourses.');
+        debugPrint(
+          '[DEBUG - Kasus D] CoursesPage unmounted sebelum pemanggilan async loadCourses.',
+        );
         return;
       }
 
-      debugPrint('[DEBUG - Kasus D] CoursesPage mounted, memanggil loadCourses() secara aman.');
+      debugPrint(
+        '[DEBUG - Kasus D] CoursesPage mounted, memanggil loadCourses() secara aman.',
+      );
       context.read<CourseProvider>().loadCourses();
     });
   }
@@ -80,9 +84,7 @@ class _CoursesPageState extends State<CoursesPage> {
     final courseProvider = context.watch<CourseProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Course Explorer v2'),
-      ),
+      appBar: AppBar(title: const Text('Course Explorer v2')),
       body: Column(
         children: [
           // ====================================================

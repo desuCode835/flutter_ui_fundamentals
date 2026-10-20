@@ -85,9 +85,9 @@ class CourseDetailPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  final wasFav = context
-                      .read<CourseProvider>()
-                      .isFavorite(course.code);
+                  final wasFav = context.read<CourseProvider>().isFavorite(
+                    course.code,
+                  );
                   context.read<CourseProvider>().toggleFavorite(course.code);
 
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -106,9 +106,7 @@ class CourseDetailPage extends StatelessWidget {
                   isFavorite ? 'Hapus dari Favorite' : 'Tambah ke Favorite',
                 ),
                 style: isFavorite
-                    ? ElevatedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      )
+                    ? ElevatedButton.styleFrom(foregroundColor: Colors.red)
                     : null,
               ),
             ),

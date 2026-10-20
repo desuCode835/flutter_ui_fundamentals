@@ -28,11 +28,11 @@ class CourseProvider extends ChangeNotifier {
   final Set<String> favorites = {};
 
   // ===========================================================================
-  // TAHAP 2: STATE & HTTP GET REST API (JSONPlaceholder Posts)
+  // TAHAP 2 & 3: STATE & HTTP GET REST API (List<Course>)
   // ===========================================================================
   // Nama : Gede Supadma
   // NIM  : 2415051014
-  List<dynamic> posts = [];
+  List<Course> posts = [];
   bool isPostsLoading = false;
   String? postsError;
   String? lastFetchedUrl;
@@ -46,11 +46,11 @@ class CourseProvider extends ChangeNotifier {
     try {
       posts = await repository.getPosts(endpoint: endpoint);
       debugPrint(
-        '[TAHAP 2 Provider] Berhasil memperbarui state dengan ${posts.length} post',
+        '[TAHAP 3 Provider] Berhasil memperbarui state dengan ${posts.length} Course',
       );
     } catch (e) {
       postsError = e.toString();
-      debugPrint('[TAHAP 2 Provider] Terjadi error saat fetchPosts: $e');
+      debugPrint('[TAHAP 3 Provider] Terjadi error saat fetchPosts: $e');
     } finally {
       isPostsLoading = false;
       notifyListeners();
@@ -65,7 +65,9 @@ class CourseProvider extends ChangeNotifier {
   // TAHAP 15 - KASUS A: PENGUJIAN notifyListeners()
   // ===========================================================================
   void toggleFavorite(String code) {
-    debugPrint('[DEBUG - Kasus A] toggleFavorite() dipanggil untuk code: $code');
+    debugPrint(
+      '[DEBUG - Kasus A] toggleFavorite() dipanggil untuk code: $code',
+    );
 
     if (favorites.contains(code)) {
       favorites.remove(code);
@@ -82,7 +84,9 @@ class CourseProvider extends ChangeNotifier {
     // [Kasus A]: notifyListeners() WAJIB dipanggil agar UI (watch/Consumer) langsung rebuild.
     // Jika baris ini dikomentari/dihapus, data berubah secara internal namun UI tidak akan terupdate.
     notifyListeners();
-    debugPrint('[DEBUG - Kasus A] notifyListeners() dipanggil untuk memperbarui UI.');
+    debugPrint(
+      '[DEBUG - Kasus A] notifyListeners() dipanggil untuk memperbarui UI.',
+    );
   }
 
   List<Course> get favoriteCourses {

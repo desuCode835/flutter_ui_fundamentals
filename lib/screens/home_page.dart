@@ -91,7 +91,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Tahap 2 — Pengujian HTTP GET',
+                            'Tahap 3 — Model Course & HTTP GET',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
@@ -134,8 +134,7 @@ class HomePage extends StatelessWidget {
                               ? null
                               : () {
                                   context.read<CourseProvider>().fetchPosts(
-                                    endpoint:
-                                        'https://jsonplaceholder.typicode.com/invalid_posts_endpoint_for_test',
+                                    endpoint: 'https://jsonplaceholder.typicode.com/invalid_posts_endpoint_for_test',
                                   );
                                 },
                           icon: const Icon(Icons.error_outline),
@@ -157,7 +156,9 @@ class HomePage extends StatelessWidget {
                           children: [
                             CircularProgressIndicator(),
                             SizedBox(height: 8),
-                            Text('Mengirim HTTP GET ke REST API...'),
+                            Text(
+                              'Mengirim HTTP GET dan memparsing List<Course>...',
+                            ),
                           ],
                         ),
                       )
@@ -174,8 +175,11 @@ class HomePage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.cancel,
-                                    color: Colors.red.shade700, size: 20),
+                                Icon(
+                                  Icons.cancel,
+                                  color: Colors.red.shade700,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Error Tertangkap:',
@@ -209,10 +213,10 @@ class HomePage extends StatelessWidget {
                       )
                     else if (courseProvider.posts.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.green.shade200),
                         ),
                         child: Column(
@@ -220,33 +224,136 @@ class HomePage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.check_circle,
-                                    color: Colors.green.shade700, size: 20),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Berhasil (Status 200 OK)',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green.shade900,
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green.shade700,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Berhasil (Status 200 OK)',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.green.shade900,
+                                        ),
+                                      ),
+                                      Text(
+                                        '[TAHAP 3] Berhasil memparsing ${courseProvider.posts.length} Course dari REST API',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green.shade800,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            const Divider(height: 20),
                             Text(
-                              '[TAHAP 2] Berhasil mengambil ${courseProvider.posts.length} post dari REST API',
+                              'Hasil Parsing API ke Model Course (min. 3 item):',
                               style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green.shade800,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade900,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Contoh judul post #1: "${courseProvider.posts.first['title']}"',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey.shade800,
+                            const SizedBox(height: 8),
+
+                            // Tampilkan minimal tiga data hasil API dalam bentuk List<Course>
+                            ...courseProvider.posts.take(3).map((item) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.green.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE3F2FD),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: const Color(0xFF90CAF9),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        item.code, // Identitas turunan POST-$id
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Color(0xFF1565C0),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.title,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: Color(0xFF0D47A1),
+                                            ),
+                                          ),
+                                          if (item.body != null) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              item.body!,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                          ],
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'ID: ${item.id ?? '-'} • UserID: ${item.userId ?? '-'}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Menampilkan 3 dari ${courseProvider.posts.length} item List<Course>',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.green.shade900,
+                                ),
                               ),
                             ),
                           ],
@@ -262,14 +369,19 @@ class HomePage extends StatelessWidget {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.info_outline,
-                                color: Colors.grey, size: 18),
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.grey,
+                              size: 18,
+                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Tekan tombol di atas untuk menjalankan HTTP GET request.',
-                                style:
-                                    TextStyle(fontSize: 12, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -297,4 +409,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-

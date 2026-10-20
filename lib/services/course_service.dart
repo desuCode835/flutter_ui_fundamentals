@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/course.dart';
 
 // =============================================================================
@@ -18,13 +19,13 @@ class CourseService {
   static const String apiUrl = 'https://jsonplaceholder.typicode.com/posts';
 
   // ===========================================================================
-  // TAHAP 2: HTTP GET DARI FLUTTER
+  // TAHAP 2 & 3: HTTP GET DARI FLUTTER & PARSING KE MODEL COURSE
   // ===========================================================================
   // Nama : Gede Supadma
   // NIM  : 2415051014
-  Future<List<dynamic>> fetchPosts({String? endpoint}) async {
+  Future<List<Course>> fetchPosts({String? endpoint}) async {
     final targetUrl = endpoint ?? apiUrl;
-    debugPrint('[TAHAP 2] Memulai HTTP GET ke: $targetUrl');
+    debugPrint('[TAHAP 3] Memulai HTTP GET ke: $targetUrl');
 
     try {
       final response = await http.get(Uri.parse(targetUrl));
@@ -32,21 +33,27 @@ class CourseService {
       // 3. Periksa response.statusCode sebelum memproses response
       if (response.statusCode == 200) {
         // 4. Jika status code 200, parsing JSON menggunakan jsonDecode
-        final List<dynamic> posts = jsonDecode(response.body) as List<dynamic>;
+        final List<dynamic> jsonList =
+            jsonDecode(response.body) as List<dynamic>;
 
-        // 5. Cetak jumlah item yang berhasil diterima
+        // Konversi setiap item JSON menjadi objek Course via Course.fromJson
+        final List<Course> posts = jsonList
+            .map((item) => Course.fromJson(item as Map<String, dynamic>))
+            .toList();
+
+        // 5. Cetak jumlah item yang berhasil diterima dan diparsing
         debugPrint(
-          '[TAHAP 2] Berhasil mengambil ${posts.length} post dari REST API',
+          '[TAHAP 3] Berhasil memparsing ${posts.length} Course dari REST API',
         );
         return posts;
       } else {
         final errorMessage =
-            '[TAHAP 2] Gagal mengambil data. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
+            '[TAHAP 3] Gagal mengambil data. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
         debugPrint(errorMessage);
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('[TAHAP 2] Terjadi kesalahan saat HTTP GET: $e');
+      debugPrint('[TAHAP 3] Terjadi kesalahan saat HTTP GET: $e');
       rethrow;
     }
   }
@@ -68,7 +75,9 @@ class CourseService {
         .map((e) => Course.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    debugPrint('[DEBUG - Kasus C] CourseService: Berhasil parsing ${courses.length} courses dari JSON');
+    debugPrint(
+      '[DEBUG - Kasus C] CourseService: Berhasil parsing ${courses.length} courses dari JSON',
+    );
     return courses;
   }
 }
