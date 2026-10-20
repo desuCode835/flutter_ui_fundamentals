@@ -1561,6 +1561,184 @@ class SupabaseCourseSection extends StatelessWidget {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 15: DIALOG KONFIRMASI DAN PROSES DELETE SUPABASE
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  Future<void> _showSupabaseDeleteConfirmation(
+    BuildContext context,
+    Course item,
+  ) async {
+    final targetId = item.id;
+    if (targetId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Course "${item.code}" belum memiliki ID di Supabase.',
+          ),
+          backgroundColor: Colors.orange.shade800,
+        ),
+      );
+      return;
+    }
+
+    // 5. Sebelum menghapus, tampilkan dialog konfirmasi. Data hanya boleh dihapus jika pengguna menekan tombol konfirmasi.
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red.shade700,
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Hapus Course (Supabase)',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFC62828),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mahasiswa: Gede Supadma • NIM: 2415051014',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          color: Color(0xFFC62828),
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Operasi: DELETE dari tabel courses Supabase',
+                        style: TextStyle(fontSize: 11, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Apakah Anda yakin ingin menghapus course berikut secara permanen dari database Supabase?',
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.code} — ${item.title}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Color(0xFF004D40),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID Supabase: $targetId • SKS: ${item.credits} • Status: ${item.status}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '* Perhatian: Data akan dihapus langsung dari database Supabase berdasarkan kolom ID ($targetId). Tindakan ini tidak dapat dibatalkan.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.red.shade800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              icon: const Icon(Icons.delete_forever, size: 16),
+              label: const Text('Hapus Permanen'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != true) return;
+    if (!context.mounted) return;
+
+    final provider = context.read<CourseProvider>();
+    // 2 & 8. Hapus data dari tabel courses berdasarkan ID menggunakan Supabase
+    final success = await provider.deleteSupabaseCourse(targetId);
+
+    if (!context.mounted) return;
+
+    // 6 & 7. Refresh daftar course dan tampilkan pesan keberhasilan / error
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Berhasil menghapus course "${item.title}" (ID: $targetId) dari database Supabase!',
+          ),
+          backgroundColor: Colors.teal.shade800,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal menghapus course dari Supabase: ${provider.deleteSupabaseCourseError ?? "Terjadi kesalahan"}',
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
@@ -1925,22 +2103,40 @@ class SupabaseCourseSection extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit_note,
-                                color: Color(0xFF00796B),
-                                size: 24,
-                              ),
-                              tooltip: 'Edit di Halaman Detail',
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        CourseDetailPage(course: item),
+                            Wrap(
+                              spacing: 2,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit_note,
+                                    color: Color(0xFF00796B),
+                                    size: 24,
                                   ),
-                                );
-                              },
+                                  tooltip: 'Edit di Halaman Detail',
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            CourseDetailPage(course: item),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red.shade700,
+                                    size: 22,
+                                  ),
+                                  tooltip: 'Hapus dari Supabase',
+                                  onPressed: () =>
+                                      _showSupabaseDeleteConfirmation(
+                                        context,
+                                        item,
+                                      ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

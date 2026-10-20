@@ -371,6 +371,41 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 15: DELETE COURSE DARI SUPABASE (Menghapus Data dari Database)
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  bool isDeletingSupabaseCourse = false;
+  String? deleteSupabaseCourseError;
+
+  /// Menghapus course dari database Supabase melalui CourseRepository berdasarkan id.
+  /// Setelah DELETE berhasil, memanggil kembali fetchSupabaseCourses() agar data terbaru tampil.
+  Future<bool> deleteSupabaseCourse(int id) async {
+    isDeletingSupabaseCourse = true;
+    deleteSupabaseCourseError = null;
+    notifyListeners();
+
+    try {
+      await repository.deleteSupabaseCourse(id);
+      debugPrint(
+        '[TAHAP 15 Provider] Berhasil menghapus course ID $id dari Supabase',
+      );
+      // Panggil kembali fetchSupabaseCourses() agar daftar data terbaru tampil
+      await fetchSupabaseCourses();
+      return true;
+    } catch (e) {
+      deleteSupabaseCourseError = e.toString();
+      debugPrint(
+        '[TAHAP 15 Provider] Gagal menghapus course dari Supabase: $e',
+      );
+      return false;
+    } finally {
+      isDeletingSupabaseCourse = false;
+      notifyListeners();
+    }
+  }
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }

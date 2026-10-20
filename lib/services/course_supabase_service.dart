@@ -105,4 +105,28 @@ class CourseSupabaseService {
       rethrow;
     }
   }
+
+  // Nama : Gede Supadma
+  // NIM : 2415051014
+  // ===========================================================================
+  // TAHAP 15: DELETE — MENGHAPUS DATA DARI DATABASE SUPABASE
+  // ===========================================================================
+  /// Menghapus data course dari tabel `courses` di Supabase berdasarkan `id`.
+  Future<void> deleteCourse(int id) async {
+    debugPrint(
+      '[TAHAP 15 - CourseSupabaseService] Menghapus course ID $id dari Supabase...',
+    );
+
+    try {
+      await client.from('courses').delete().eq('id', id);
+      debugPrint(
+        '[TAHAP 15 - CourseSupabaseService] Berhasil menghapus course ID $id dari Supabase',
+      );
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 15 - CourseSupabaseService] Terjadi kesalahan saat delete course di Supabase: $e',
+      );
+      rethrow;
+    }
+  }
 }

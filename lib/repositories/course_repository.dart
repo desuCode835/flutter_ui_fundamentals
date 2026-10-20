@@ -64,6 +64,14 @@ class CourseRepository {
   }
 
   // ===========================================================================
+  // TAHAP 15: METHOD DELETE COURSE MELALUI CourseSupabaseService
+  // ===========================================================================
+  /// Menghapus course dari database Supabase (tabel courses) berdasarkan id
+  Future<void> deleteSupabaseCourse(int id) {
+    return supabaseService.deleteCourse(id);
+  }
+
+  // ===========================================================================
   // TAHAP 4: METHOD HTTP GET POSTS MELALUI CourseApiService
   // ===========================================================================
   Future<List<Course>> getPosts({String? endpoint}) {
