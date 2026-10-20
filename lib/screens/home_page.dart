@@ -91,7 +91,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Tahap 3 — Model Course & HTTP GET',
+                            'Tahap 4 — Service Layer (CourseApiService)',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
@@ -157,7 +157,7 @@ class HomePage extends StatelessWidget {
                             CircularProgressIndicator(),
                             SizedBox(height: 8),
                             Text(
-                              'Mengirim HTTP GET dan memparsing List<Course>...',
+                              'Mengirim HTTP GET melalui CourseApiService...',
                             ),
                           ],
                         ),
@@ -244,7 +244,7 @@ class HomePage extends StatelessWidget {
                                         ),
                                       ),
                                       Text(
-                                        '[TAHAP 3] Berhasil memparsing ${courseProvider.posts.length} Course dari REST API',
+                                        '[TAHAP 4] Berhasil memparsing ${courseProvider.posts.length} Course via CourseApiService',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,

@@ -10,6 +10,7 @@ import 'screens/courses_page.dart';
 import 'screens/favorites_page.dart';
 import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
+import 'services/course_api_service.dart';
 import 'services/course_service.dart';
 
 // ===========================================================================
@@ -26,7 +27,8 @@ import 'services/course_service.dart';
 // sehingga seluruh widget turunan di dalam MyApp memiliki akses context yang valid.
 void main() {
   final service = CourseService();
-  final repository = CourseRepository(service);
+  final apiService = CourseApiService();
+  final repository = CourseRepository(service, apiService);
 
   runApp(
     ChangeNotifierProvider(

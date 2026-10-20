@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/course.dart';
 import '../repositories/course_repository.dart';
-import '../services/course_service.dart';
+import '../services/course_api_service.dart';
 
 // =============================================================================
 // TAHAP 15: DOKUMENTASI DEBUGGING PROVIDER & CHANGENOTIFIER
@@ -28,7 +28,7 @@ class CourseProvider extends ChangeNotifier {
   final Set<String> favorites = {};
 
   // ===========================================================================
-  // TAHAP 2 & 3: STATE & HTTP GET REST API (List<Course>)
+  // TAHAP 4: STATE & HTTP GET REST API (List<Course>)
   // ===========================================================================
   // Nama : Gede Supadma
   // NIM  : 2415051014
@@ -40,17 +40,17 @@ class CourseProvider extends ChangeNotifier {
   Future<void> fetchPosts({String? endpoint}) async {
     isPostsLoading = true;
     postsError = null;
-    lastFetchedUrl = endpoint ?? CourseService.apiUrl;
+    lastFetchedUrl = endpoint ?? CourseApiService.apiUrl;
     notifyListeners();
 
     try {
       posts = await repository.getPosts(endpoint: endpoint);
       debugPrint(
-        '[TAHAP 3 Provider] Berhasil memperbarui state dengan ${posts.length} Course',
+        '[TAHAP 4 Provider] Berhasil memperbarui state dengan ${posts.length} Course',
       );
     } catch (e) {
       postsError = e.toString();
-      debugPrint('[TAHAP 3 Provider] Terjadi error saat fetchPosts: $e');
+      debugPrint('[TAHAP 4 Provider] Terjadi error saat fetchPosts: $e');
     } finally {
       isPostsLoading = false;
       notifyListeners();
