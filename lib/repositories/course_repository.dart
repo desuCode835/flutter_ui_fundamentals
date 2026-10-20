@@ -12,4 +12,11 @@ class CourseRepository {
   Future<List<Course>> getCourses() {
     return service.loadCourses();
   }
+
+  // ===========================================================================
+  // TAHAP 2: METHOD HTTP GET POSTS
+  // ===========================================================================
+  Future<List<dynamic>> getPosts({String? endpoint}) {
+    return service.fetchPosts(endpoint: endpoint);
+  }
 }

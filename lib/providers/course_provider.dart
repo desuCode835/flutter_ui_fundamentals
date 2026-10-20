@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/course.dart';
 import '../repositories/course_repository.dart';
+import '../services/course_service.dart';
 
 // =============================================================================
 // TAHAP 15: DOKUMENTASI DEBUGGING PROVIDER & CHANGENOTIFIER
@@ -25,6 +26,36 @@ class CourseProvider extends ChangeNotifier {
   String? error;
 
   final Set<String> favorites = {};
+
+  // ===========================================================================
+  // TAHAP 2: STATE & HTTP GET REST API (JSONPlaceholder Posts)
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  List<dynamic> posts = [];
+  bool isPostsLoading = false;
+  String? postsError;
+  String? lastFetchedUrl;
+
+  Future<void> fetchPosts({String? endpoint}) async {
+    isPostsLoading = true;
+    postsError = null;
+    lastFetchedUrl = endpoint ?? CourseService.apiUrl;
+    notifyListeners();
+
+    try {
+      posts = await repository.getPosts(endpoint: endpoint);
+      debugPrint(
+        '[TAHAP 2 Provider] Berhasil memperbarui state dengan ${posts.length} post',
+      );
+    } catch (e) {
+      postsError = e.toString();
+      debugPrint('[TAHAP 2 Provider] Terjadi error saat fetchPosts: $e');
+    } finally {
+      isPostsLoading = false;
+      notifyListeners();
+    }
+  }
 
   bool isFavorite(String code) {
     return favorites.contains(code);
