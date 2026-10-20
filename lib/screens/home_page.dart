@@ -10,6 +10,192 @@ import '../providers/course_provider.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  // ===========================================================================
+  // TAHAP 8: DIALOG KONFIRMASI DAN PROSES HTTP DELETE
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  Future<void> _showDeleteConfirmation(
+    BuildContext context,
+    Course item,
+  ) async {
+    // 4. Ketika tombol Delete ditekan, tampilkan AlertDialog konfirmasi
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red.shade700, size: 28),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Konfirmasi Hapus Course',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFC62828),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: const Text(
+                    'Mahasiswa: Gede Supadma • NIM: 2415051014',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      color: Color(0xFF1565C0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Apakah Anda yakin ingin menghapus course berikut dari daftar?',
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.code} — ${item.title}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Color(0xFF0D47A1),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: ${item.id ?? 1} • SKS: ${item.credits}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '* Catatan: JSONPlaceholder menyimulasikan HTTP DELETE (Status 200/204). '
+                  'Setelah berhasil, item dihapus dari state lokal UI.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            // 5. Jika pengguna memilih Batal, jangan lakukan request DELETE atau mengubah daftar
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop('cancel'),
+              child: const Text('Batal'),
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(dialogCtx).pop('error_test'),
+                  icon: const Icon(Icons.error_outline, size: 15),
+                  label: const Text(
+                    'Uji Error DELETE',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(dialogCtx).pop('confirm'),
+                  icon: const Icon(Icons.delete, size: 15),
+                  label: const Text('Hapus', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+    // 5. Jika batal, jangan lakukan request DELETE atau mengubah daftar
+    if (result == null || result == 'cancel') {
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    final provider = context.read<CourseProvider>();
+    final targetId = item.id ?? 1;
+    final endpoint = result == 'error_test'
+        ? 'https://jsonplaceholder.typicode.com/invalid_posts_endpoint_for_test'
+        : null;
+
+    // 6. Jika pengguna memilih Hapus, jalankan HTTP DELETE
+    final success = await provider.deleteCourse(
+      targetId,
+      code: item.code,
+      endpoint: endpoint,
+    );
+
+    if (!context.mounted) return;
+
+    // 6 & 7. Tampilkan SnackBar yang sesuai dengan hasil operasi
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Berhasil menghapus course "${item.code} - ${item.title}" via HTTP DELETE (Status 200 OK)! Item telah dihapus dari daftar.',
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal menghapus course via HTTP DELETE: ${provider.deleteCourseError ?? "Terjadi kesalahan"}',
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
@@ -480,34 +666,76 @@ class HomePage extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    // 1. Tombol Edit pada setiap item course di daftar
-                                    OutlinedButton.icon(
-                                      onPressed: () {
-                                        // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
-                                        showDialog(
-                                          context: context,
-                                          builder: (dialogCtx) =>
-                                              CourseEditDialog(course: item),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.edit, size: 14),
-                                      label: const Text(
-                                        'Edit',
-                                        style: TextStyle(fontSize: 11),
-                                      ),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xFF1565C0,
+                                    // Tombol Aksi: Edit (Tahap 7) & Delete (Tahap 8)
+                                    Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children: [
+                                        // 1. Tombol Edit pada setiap item course di daftar (Tahap 7)
+                                        OutlinedButton.icon(
+                                          onPressed: () {
+                                            // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
+                                            showDialog(
+                                              context: context,
+                                              builder: (dialogCtx) =>
+                                                  CourseEditDialog(
+                                                    course: item,
+                                                  ),
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            size: 13,
+                                          ),
+                                          label: const Text(
+                                            'Edit',
+                                            style: TextStyle(fontSize: 11),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: const Color(
+                                              0xFF1565C0,
+                                            ),
+                                            side: BorderSide(
+                                              color: Colors.blue.shade300,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
                                         ),
-                                        side: BorderSide(
-                                          color: Colors.blue.shade300,
+                                        // 3. Tombol Delete pada setiap item course (Tahap 8)
+                                        OutlinedButton.icon(
+                                          onPressed: () =>
+                                              _showDeleteConfirmation(
+                                                context,
+                                                item,
+                                              ),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 13,
+                                          ),
+                                          label: const Text(
+                                            'Hapus',
+                                            style: TextStyle(fontSize: 11),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor:
+                                                Colors.red.shade700,
+                                            side: BorderSide(
+                                              color: Colors.red.shade300,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
+                                      ],
                                     ),
                                   ],
                                 ),

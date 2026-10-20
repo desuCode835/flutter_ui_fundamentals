@@ -203,6 +203,53 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 8: HTTP DELETE — MENGHAPUS RESOURCE
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  bool isDeletingCourse = false;
+  String? deleteCourseError;
+
+  Future<bool> deleteCourse(int id, {String? code, String? endpoint}) async {
+    isDeletingCourse = true;
+    deleteCourseError = null;
+    notifyListeners();
+
+    try {
+      final success = await repository.deleteCourse(id, endpoint: endpoint);
+
+      if (success) {
+        // 7. Setelah berhasil, perbarui daftar course agar item yang dihapus tidak lagi tampil.
+        // JSONPlaceholder menyimulasikan DELETE tanpa menghapus data secara permanen di server,
+        // sehingga sinkronisasi state lokal memastikan UI langsung mencerminkan penghapusan item.
+        posts.removeWhere(
+          (p) => p.id == id || (code != null && p.code == code),
+        );
+
+        // Hapus juga dari daftar courses lokal jika cocok
+        if (code != null) {
+          courses.removeWhere((c) => c.code == code);
+          favorites.remove(code);
+        }
+
+        debugPrint(
+          '[TAHAP 8 Provider] Berhasil menghapus course ID: $id (Sisa posts: ${posts.length})',
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      // 7. Pastikan penanganan error tidak menghapus item dari UI jika request gagal
+      deleteCourseError = e.toString();
+      debugPrint('[TAHAP 8 Provider] Gagal menghapus course: $e');
+      return false;
+    } finally {
+      isDeletingCourse = false;
+      notifyListeners();
+    }
+  }
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }

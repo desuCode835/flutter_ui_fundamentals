@@ -48,4 +48,11 @@ class CourseRepository {
       usePatch: usePatch,
     );
   }
+
+  // ===========================================================================
+  // TAHAP 8: METHOD HTTP DELETE COURSE MELALUI CourseApiService
+  // ===========================================================================
+  Future<bool> deleteCourse(int id, {String? endpoint}) {
+    return apiService.deleteCourse(id, endpoint: endpoint);
+  }
 }

@@ -205,4 +205,43 @@ class CourseApiService {
       rethrow;
     }
   }
+
+  /// ===========================================================================
+  /// TAHAP 8: HTTP DELETE — MENGHAPUS RESOURCE
+  /// ===========================================================================
+  /// Mengirim request HTTP DELETE ke endpoint `$apiUrl/$id`.
+  /// Parameter [id]: ID unik resource yang akan dihapus.
+  /// Parameter opsional [endpoint]: custom URL untuk simulasi error atau endpoint pengujian.
+  Future<bool> deleteCourse(int id, {String? endpoint}) async {
+    final targetUrl = endpoint ?? '$apiUrl/$id';
+    debugPrint(
+      '[TAHAP 8 - CourseApiService] Memulai HTTP DELETE ke: $targetUrl',
+    );
+
+    try {
+      final response = await _client.delete(Uri.parse(targetUrl));
+
+      debugPrint(
+        '[TAHAP 8 - CourseApiService] Response status: ${response.statusCode}',
+      );
+
+      // Tangani status code 200 (OK) atau 204 (No Content) sebagai berhasil
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint(
+          '[TAHAP 8 - CourseApiService] Berhasil menghapus resource ID: $id (Status: ${response.statusCode})',
+        );
+        return true;
+      } else {
+        final errorMessage =
+            '[TAHAP 8 - CourseApiService] Gagal menghapus resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
+        debugPrint(errorMessage);
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 8 - CourseApiService] Terjadi kesalahan saat HTTP DELETE: $e',
+      );
+      rethrow;
+    }
+  }
 }

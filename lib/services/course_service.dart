@@ -46,6 +46,11 @@ class CourseService {
     );
   }
 
+  /// Forwarder deleteCourse ke CourseApiService untuk kompatibilitas (Tahap 8)
+  Future<bool> deleteCourse(int id, {String? endpoint}) {
+    return _apiService.deleteCourse(id, endpoint: endpoint);
+  }
+
   // ===========================================================================
   // TAHAP 15 - KASUS C: DEBUGGING PATH ASSET JSON
   // ===========================================================================
