@@ -119,4 +119,90 @@ class CourseApiService {
       rethrow;
     }
   }
+
+  /// ===========================================================================
+  /// TAHAP 7: HTTP PUT / PATCH — MEMPERBARUI RESOURCE
+  /// ===========================================================================
+  /// Mengirim request HTTP PUT (atau PATCH) melalui service layer menggunakan
+  /// header `Content-Type: application/json; charset=UTF-8` dan `jsonEncode`.
+  /// Parameter [course]: objek Course dengan data terbaru (code, title, credits).
+  /// Parameter opsional [endpoint]: custom URL untuk simulasi error atau endpoint pengujian.
+  /// Parameter opsional [usePatch]: boolean apakah menggunakan HTTP PATCH daripada HTTP PUT.
+  Future<Course> updateCourse(
+    Course course, {
+    String? endpoint,
+    bool usePatch = false,
+  }) async {
+    // Tentukan target URL berdasarkan ID resource
+    // Jika endpoint tidak ditentukan, arahkan ke $apiUrl/$targetId
+    // Catatan: JSONPlaceholder mensimulasikan update pada post 1..100.
+    // Jika course.id di luar rentang itu (misal ID 101 dari POST lokal), gunakan ID 1 sebagai representasi server simulasi.
+    final int targetId =
+        (course.id != null && course.id! > 0 && course.id! <= 100)
+        ? course.id!
+        : 1;
+    final targetUrl = endpoint ?? '$apiUrl/$targetId';
+
+    debugPrint(
+      '[TAHAP 7 - CourseApiService] Memulai HTTP ${usePatch ? "PATCH" : "PUT"} ke: $targetUrl',
+    );
+
+    final payload = {
+      if (course.id != null) 'id': targetId,
+      'title': course.title,
+      'body': 'Kode: ${course.code} • SKS: ${course.credits}',
+      'code': course.code,
+      'credits': course.credits,
+      'userId': course.userId ?? 1,
+    };
+
+    try {
+      final http.Response response;
+      final uri = Uri.parse(targetUrl);
+      final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+      final body = jsonEncode(payload);
+
+      if (usePatch) {
+        response = await _client.patch(uri, headers: headers, body: body);
+      } else {
+        response = await _client.put(uri, headers: headers, body: body);
+      }
+
+      debugPrint(
+        '[TAHAP 7 - CourseApiService] Response status: ${response.statusCode}',
+      );
+
+      // 6. Tangani respons berhasil (HTTP 200 OK)
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data =
+            jsonDecode(response.body) as Map<String, dynamic>;
+
+        debugPrint(
+          '[TAHAP 7 - CourseApiService] ${usePatch ? "PATCH" : "PUT"} Berhasil: $data',
+        );
+
+        return Course(
+          code: course.code,
+          title: data['title'] as String? ?? course.title,
+          credits: course.credits,
+          status: course.status,
+          id: course.id ?? (data['id'] as num?)?.toInt(),
+          userId: course.userId ?? (data['userId'] as num?)?.toInt() ?? 1,
+          body:
+              data['body'] as String? ??
+              'Kode: ${course.code} • SKS: ${course.credits}',
+        );
+      } else {
+        final errorMessage =
+            '[TAHAP 7 - CourseApiService] Gagal memperbarui resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
+        debugPrint(errorMessage);
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 7 - CourseApiService] Terjadi kesalahan saat HTTP ${usePatch ? "PATCH" : "PUT"}: $e',
+      );
+      rethrow;
+    }
+  }
 }

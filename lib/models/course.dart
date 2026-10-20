@@ -58,6 +58,27 @@ class Course {
     );
   }
 
+  // Method copyWith untuk memudahkan modifikasi field course (Tahap 7)
+  Course copyWith({
+    String? code,
+    String? title,
+    int? credits,
+    String? status,
+    int? id,
+    int? userId,
+    String? body,
+  }) {
+    return Course(
+      code: code ?? this.code,
+      title: title ?? this.title,
+      credits: credits ?? this.credits,
+      status: status ?? this.status,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      body: body ?? this.body,
+    );
+  }
+
   // Method toJson untuk serialisasi objek kembali ke Map<String, dynamic>
   // Menjaga integritas payload tanpa menyertakan field buatan ke API payload
   Map<String, dynamic> toJson() {

@@ -374,8 +374,8 @@ class HomePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
 
-                            // Tampilkan minimal tiga data hasil API dalam bentuk List<Course>
-                            ...courseProvider.posts.take(3).map((item) {
+                            // Tampilkan minimal tiga data hasil API dalam bentuk List<Course> (Tahap 5 & 7)
+                            ...courseProvider.posts.take(5).map((item) {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(10),
@@ -402,7 +402,7 @@ class HomePage extends StatelessWidget {
                                         ),
                                       ),
                                       child: Text(
-                                        item.code, // Identitas turunan POST-$id
+                                        item.code, // Identitas turunan POST-$id atau kode baru
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
@@ -437,14 +437,76 @@ class HomePage extends StatelessWidget {
                                             ),
                                           ],
                                           const SizedBox(height: 4),
-                                          Text(
-                                            'ID: ${item.id ?? '-'} • UserID: ${item.userId ?? '-'}',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.grey.shade600,
-                                            ),
+                                          Wrap(
+                                            spacing: 8,
+                                            crossAxisAlignment:
+                                                WrapCrossAlignment.center,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.amber.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                    color:
+                                                        Colors.amber.shade300,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  '${item.credits} SKS',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        Colors.amber.shade900,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                'ID: ${item.id ?? '-'} • UserID: ${item.userId ?? '-'}',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // 1. Tombol Edit pada setiap item course di daftar
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
+                                        showDialog(
+                                          context: context,
+                                          builder: (dialogCtx) =>
+                                              CourseEditDialog(course: item),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.edit, size: 14),
+                                      label: const Text(
+                                        'Edit',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(
+                                          0xFF1565C0,
+                                        ),
+                                        side: BorderSide(
+                                          color: Colors.blue.shade300,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        visualDensity: VisualDensity.compact,
                                       ),
                                     ),
                                   ],
@@ -455,7 +517,7 @@ class HomePage extends StatelessWidget {
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                'Menampilkan 3 dari ${courseProvider.posts.length} item List<Course>',
+                                'Menampilkan ${courseProvider.posts.length > 5 ? 5 : courseProvider.posts.length} dari ${courseProvider.posts.length} item List<Course>',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontStyle: FontStyle.italic,
@@ -783,6 +845,314 @@ class _CoursePostFormState extends State<CoursePostForm> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// =============================================================================
+// TAHAP 7: DIALOG FORM EDIT COURSE (HTTP PUT / PATCH)
+// =============================================================================
+// Nama : Gede Supadma
+// NIM  : 2415051014
+class CourseEditDialog extends StatefulWidget {
+  final Course course;
+
+  const CourseEditDialog({super.key, required this.course});
+
+  @override
+  State<CourseEditDialog> createState() => _CourseEditDialogState();
+}
+
+class _CourseEditDialogState extends State<CourseEditDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _codeController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _creditsController;
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
+    _codeController = TextEditingController(text: widget.course.code);
+    _titleController = TextEditingController(text: widget.course.title);
+    _creditsController = TextEditingController(
+      text: widget.course.credits.toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _titleController.dispose();
+    _creditsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit({
+    bool simulateError = false,
+    bool usePatch = false,
+  }) async {
+    // 4. Validasi semua field wajib diisi dan credits harus berupa angka
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final code = _codeController.text.trim();
+    final title = _titleController.text.trim();
+    final credits = int.parse(_creditsController.text.trim());
+
+    // 3. Pengguna dapat mengubah code, title, dan credits
+    final updatedCourse = widget.course.copyWith(
+      code: code,
+      title: title,
+      credits: credits,
+      body: 'Kode: $code • SKS: $credits',
+    );
+
+    final provider = context.read<CourseProvider>();
+    final endpoint = simulateError
+        ? 'https://jsonplaceholder.typicode.com/invalid_posts_endpoint_for_test'
+        : null;
+
+    // 5. Kirim perubahan menggunakan HTTP PUT atau PATCH melalui service layer
+    final success = await provider.updateCourse(
+      updatedCourse,
+      originalCode: widget.course.code,
+      originalId: widget.course.id,
+      endpoint: endpoint,
+      usePatch: usePatch,
+    );
+
+    if (!mounted) return;
+
+    final methodText = usePatch ? 'HTTP PATCH' : 'HTTP PUT';
+
+    // 6 & 7. Tangani respons berhasil dan gagal dengan baik serta tampilkan SnackBar
+    if (success) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Berhasil memperbarui course "$code - $title" via $methodText (Status 200 OK)! Daftar course telah diperbarui.',
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal memperbarui course via $methodText: ${provider.updateCourseError ?? "Terjadi kesalahan"}',
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isUpdating = context.watch<CourseProvider>().isUpdatingCourse;
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.edit_note, color: Color(0xFF1565C0), size: 28),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Edit Course (Tahap 7)',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0D47A1),
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 480,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mahasiswa: Gede Supadma • NIM: 2415051014',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Color(0xFF1565C0),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Pembaruan resource via HTTP PUT / PATCH (REST API)',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Field 1: Kode Course
+                TextFormField(
+                  controller: _codeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kode Course',
+                    prefixIcon: Icon(Icons.code),
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Kode course wajib diisi';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Field 2: Judul Course
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Judul Course',
+                    prefixIcon: Icon(Icons.book_outlined),
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Judul course wajib diisi';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Field 3: SKS (Credits)
+                TextFormField(
+                  controller: _creditsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'SKS (Credits)',
+                    prefixIcon: Icon(Icons.numbers),
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'SKS wajib diisi';
+                    }
+                    final credits = int.tryParse(value.trim());
+                    if (credits == null) {
+                      return 'SKS harus berupa angka bulat';
+                    }
+                    if (credits <= 0) {
+                      return 'SKS harus lebih besar dari 0';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                Text(
+                  '* REST API JSONPlaceholder menyimulasikan PUT/PATCH (HTTP 200 OK). '
+                  'Perubahan diperbarui ke state lokal agar langsung terlihat di UI.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actions: [
+        TextButton(
+          onPressed: isUpdating ? null : () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.end,
+          children: [
+            OutlinedButton.icon(
+              onPressed: isUpdating
+                  ? null
+                  : () => _submit(simulateError: true, usePatch: false),
+              icon: const Icon(Icons.error_outline, size: 16),
+              label: const Text('Uji Error PUT'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+                side: BorderSide(color: Colors.red.shade300),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: isUpdating
+                  ? null
+                  : () => _submit(simulateError: false, usePatch: true),
+              icon: const Icon(Icons.bolt, size: 16),
+              label: const Text('HTTP PATCH'),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: isUpdating
+                  ? null
+                  : () => _submit(simulateError: false, usePatch: false),
+              icon: isUpdating
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save, size: 16),
+              label: Text(isUpdating ? 'Menyimpan...' : 'HTTP PUT'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

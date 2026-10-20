@@ -33,6 +33,19 @@ class CourseService {
     return _apiService.createCourse(course, endpoint: endpoint);
   }
 
+  /// Forwarder updateCourse ke CourseApiService untuk kompatibilitas (Tahap 7)
+  Future<Course> updateCourse(
+    Course course, {
+    String? endpoint,
+    bool usePatch = false,
+  }) {
+    return _apiService.updateCourse(
+      course,
+      endpoint: endpoint,
+      usePatch: usePatch,
+    );
+  }
+
   // ===========================================================================
   // TAHAP 15 - KASUS C: DEBUGGING PATH ASSET JSON
   // ===========================================================================

@@ -128,6 +128,81 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 7: HTTP PUT / PATCH — MEMPERBARUI RESOURCE
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  bool isUpdatingCourse = false;
+  String? updateCourseError;
+
+  Future<bool> updateCourse(
+    Course updatedCourse, {
+    String? originalCode,
+    int? originalId,
+    String? endpoint,
+    bool usePatch = false,
+  }) async {
+    isUpdatingCourse = true;
+    updateCourseError = null;
+    notifyListeners();
+
+    try {
+      final resultCourse = await repository.updateCourse(
+        updatedCourse,
+        endpoint: endpoint,
+        usePatch: usePatch,
+      );
+
+      // 8. Perbarui daftar course lokal agar perubahan langsung terlihat di UI
+      // JSONPlaceholder menyimulasikan pembaruan tanpa menyimpan permanen di server,
+      // sehingga sinkronisasi state lokal memastikan integritas tampilan UI.
+      int index = -1;
+      if (originalId != null) {
+        index = posts.indexWhere((p) => p.id == originalId);
+      } else if (updatedCourse.id != null) {
+        index = posts.indexWhere((p) => p.id == updatedCourse.id);
+      }
+
+      if (index == -1 && originalCode != null) {
+        index = posts.indexWhere((p) => p.code == originalCode);
+      }
+
+      if (index == -1) {
+        index = posts.indexWhere((p) => p.code == updatedCourse.code);
+      }
+
+      if (index != -1) {
+        posts[index] = resultCourse;
+      } else {
+        posts.insert(0, resultCourse);
+      }
+
+      // Perbarui juga data courses lokal jika cocok
+      int localIndex = -1;
+      if (originalCode != null) {
+        localIndex = courses.indexWhere((c) => c.code == originalCode);
+      } else {
+        localIndex = courses.indexWhere((c) => c.code == updatedCourse.code);
+      }
+      if (localIndex != -1) {
+        courses[localIndex] = resultCourse;
+      }
+
+      debugPrint(
+        '[TAHAP 7 Provider] Berhasil memperbarui course: ${resultCourse.code} - ${resultCourse.title}',
+      );
+      return true;
+    } catch (e) {
+      updateCourseError = e.toString();
+      debugPrint('[TAHAP 7 Provider] Gagal memperbarui course: $e');
+      return false;
+    } finally {
+      isUpdatingCourse = false;
+      notifyListeners();
+    }
+  }
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }

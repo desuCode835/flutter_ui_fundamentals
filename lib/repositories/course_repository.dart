@@ -33,4 +33,19 @@ class CourseRepository {
   Future<Course> addCourse(Course course, {String? endpoint}) {
     return apiService.createCourse(course, endpoint: endpoint);
   }
+
+  // ===========================================================================
+  // TAHAP 7: METHOD HTTP PUT/PATCH COURSE MELALUI CourseApiService
+  // ===========================================================================
+  Future<Course> updateCourse(
+    Course course, {
+    String? endpoint,
+    bool usePatch = false,
+  }) {
+    return apiService.updateCourse(
+      course,
+      endpoint: endpoint,
+      usePatch: usePatch,
+    );
+  }
 }
