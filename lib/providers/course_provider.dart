@@ -249,6 +249,55 @@ class CourseProvider extends ChangeNotifier {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 12: STATE PENGAMBILAN DATA SUPABASE (SELECT — Membaca Data Database)
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  List<Course> supabaseCourses = [];
+  bool isSupabaseLoading = false;
+  String? supabaseError;
+  bool hasFetchedSupabase = false;
+
+  bool get isSupabaseEmpty =>
+      hasFetchedSupabase &&
+      !isSupabaseLoading &&
+      supabaseError == null &&
+      supabaseCourses.isEmpty;
+
+  bool get isSupabaseSuccess =>
+      hasFetchedSupabase &&
+      !isSupabaseLoading &&
+      supabaseError == null &&
+      supabaseCourses.isNotEmpty;
+
+  /// Membaca daftar course dari database Supabase melalui CourseRepository
+  Future<void> fetchSupabaseCourses() async {
+    isSupabaseLoading = true;
+    supabaseError = null;
+    notifyListeners();
+
+    try {
+      supabaseCourses = await repository.getSupabaseCourses();
+      hasFetchedSupabase = true;
+      debugPrint(
+        '[TAHAP 12 Provider] Berhasil mengambil ${supabaseCourses.length} Course dari Supabase',
+      );
+    } catch (e) {
+      supabaseError = e.toString();
+      hasFetchedSupabase = true;
+      debugPrint(
+        '[TAHAP 12 Provider] Terjadi error saat fetchSupabaseCourses: $e',
+      );
+    } finally {
+      isSupabaseLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Alias method untuk kemudahan pemanggilan
+  Future<void> loadSupabaseCourses() => fetchSupabaseCourses();
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }

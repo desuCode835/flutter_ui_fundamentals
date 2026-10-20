@@ -14,6 +14,7 @@ import 'screens/home_page.dart';
 import 'screens/profile_page.dart';
 import 'services/course_api_service.dart';
 import 'services/course_service.dart';
+import 'services/course_supabase_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,8 @@ Future<void> main() async {
 
   final service = CourseService();
   final apiService = CourseApiService();
-  final repository = CourseRepository(service, apiService);
+  final supabaseService = CourseSupabaseService();
+  final repository = CourseRepository(service, apiService, supabaseService);
 
   runApp(
     ChangeNotifierProvider(
