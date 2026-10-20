@@ -32,17 +32,21 @@ void main() {
       provider = CourseProvider(repository);
     });
 
-    test('1. READ: getCourses / fetchSupabaseCourses berhasil membaca data', () async {
-      await provider.fetchSupabaseCourses();
+    test(
+      '1. READ: getCourses / fetchSupabaseCourses berhasil membaca data',
+      () async {
+        await provider.fetchSupabaseCourses();
 
-      expect(provider.isSupabaseLoading, isFalse);
-      expect(provider.supabaseError, isNull);
-      expect(provider.hasFetchedSupabase, isTrue);
-      expect(provider.supabaseCourses, isA<List<Course>>());
-    });
+        expect(provider.isSupabaseLoading, isFalse);
+        expect(provider.supabaseError, isNull);
+        expect(provider.hasFetchedSupabase, isTrue);
+        expect(provider.supabaseCourses, isA<List<Course>>());
+      },
+    );
 
     test('2. CREATE, UPDATE, DELETE Full Lifecycle Test di Supabase', () async {
-      final testCode = 'TEST-AUDIT-${DateTime.now().millisecondsSinceEpoch % 10000}';
+      final testCode =
+          'TEST-AUDIT-${DateTime.now().millisecondsSinceEpoch % 10000}';
       final testCourse = Course(
         code: testCode,
         title: 'Audit Course Mini Project',
@@ -60,8 +64,16 @@ void main() {
       final createdCourse = provider.supabaseCourses
           .where((c) => c.code == testCode)
           .firstOrNull;
-      expect(createdCourse, isNotNull, reason: 'Course yang di-insert harus muncul di Supabase');
-      expect(createdCourse!.id, isNotNull, reason: 'ID dari database Supabase harus tersedia');
+      expect(
+        createdCourse,
+        isNotNull,
+        reason: 'Course yang di-insert harus muncul di Supabase',
+      );
+      expect(
+        createdCourse!.id,
+        isNotNull,
+        reason: 'ID dari database Supabase harus tersedia',
+      );
       final targetId = createdCourse.id!;
 
       // --- B. UPDATE ---
@@ -70,7 +82,10 @@ void main() {
         credits: 4,
         status: 'active',
       );
-      final updateSuccess = await provider.updateSupabaseCourse(updatedCourse, id: targetId);
+      final updateSuccess = await provider.updateSupabaseCourse(
+        updatedCourse,
+        id: targetId,
+      );
       expect(updateSuccess, isTrue);
       expect(provider.isUpdatingSupabaseCourse, isFalse);
       expect(provider.updateSupabaseCourseError, isNull);
@@ -93,7 +108,11 @@ void main() {
       final foundAfterDelete = provider.supabaseCourses
           .where((c) => c.id == targetId)
           .firstOrNull;
-      expect(foundAfterDelete, isNull, reason: 'Course harus terhapus dari Supabase');
+      expect(
+        foundAfterDelete,
+        isNull,
+        reason: 'Course harus terhapus dari Supabase',
+      );
     });
 
     test('3. Error Handling & Retry Test', () async {

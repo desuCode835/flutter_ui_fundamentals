@@ -1574,9 +1574,7 @@ class SupabaseCourseSection extends StatelessWidget {
     if (targetId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Course "${item.code}" belum memiliki ID di Supabase.',
-          ),
+          content: Text('Course "${item.code}" belum memiliki ID di Supabase.'),
           backgroundColor: Colors.orange.shade800,
         ),
       );
@@ -1838,8 +1836,9 @@ class SupabaseCourseSection extends StatelessWidget {
                 child: Column(
                   children: [
                     const CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF00796B)),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF00796B),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -2055,8 +2054,9 @@ class SupabaseCourseSection extends StatelessWidget {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.amber.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                           border: Border.all(
                                             color: Colors.amber.shade300,
                                           ),
@@ -2080,8 +2080,9 @@ class SupabaseCourseSection extends StatelessWidget {
                                           color: statusColor.withValues(
                                             alpha: 0.1,
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                           border: Border.all(
                                             color: statusColor.withValues(
                                               alpha: 0.5,
@@ -2165,10 +2166,7 @@ class SupabaseCourseSection extends StatelessWidget {
                     const Expanded(
                       child: Text(
                         'Tekan tombol "Muat Data Supabase" di atas untuk mengambil data dari tabel courses.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
                       ),
                     ),
                   ],
@@ -2180,4 +2178,3 @@ class SupabaseCourseSection extends StatelessWidget {
     );
   }
 }
-

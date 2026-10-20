@@ -47,6 +47,15 @@ class CourseProvider extends ChangeNotifier {
       postsError == null &&
       posts.isNotEmpty;
 
+  // Helper untuk membersihkan prefix 'Exception: ' agar pesan UI ramah pengguna (Tahap 17)
+  String _cleanErrorMessage(Object error) {
+    var msg = error.toString();
+    if (msg.startsWith('Exception: ')) {
+      msg = msg.substring('Exception: '.length);
+    }
+    return msg.trim();
+  }
+
   Future<void> fetchPosts({String? endpoint}) async {
     isPostsLoading = true;
     postsError = null;
@@ -60,7 +69,7 @@ class CourseProvider extends ChangeNotifier {
         '[TAHAP 5 Provider] Berhasil mengambil ${posts.length} Course (State: ${posts.isEmpty ? "EMPTY" : "SUCCESS"})',
       );
     } catch (e) {
-      postsError = e.toString();
+      postsError = _cleanErrorMessage(e);
       hasFetchedPosts = true;
       debugPrint(
         '[TAHAP 5 Provider] Terjadi error saat fetchPosts (State: ERROR): $e',
@@ -118,7 +127,7 @@ class CourseProvider extends ChangeNotifier {
       );
       return true;
     } catch (e) {
-      createCourseError = e.toString();
+      createCourseError = _cleanErrorMessage(e);
       debugPrint('[TAHAP 6 Provider] Gagal membuat course: $e');
       return false;
     } finally {
@@ -193,7 +202,7 @@ class CourseProvider extends ChangeNotifier {
       );
       return true;
     } catch (e) {
-      updateCourseError = e.toString();
+      updateCourseError = _cleanErrorMessage(e);
       debugPrint('[TAHAP 7 Provider] Gagal memperbarui course: $e');
       return false;
     } finally {
@@ -240,7 +249,7 @@ class CourseProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       // 7. Pastikan penanganan error tidak menghapus item dari UI jika request gagal
-      deleteCourseError = e.toString();
+      deleteCourseError = _cleanErrorMessage(e);
       debugPrint('[TAHAP 8 Provider] Gagal menghapus course: $e');
       return false;
     } finally {
@@ -284,7 +293,7 @@ class CourseProvider extends ChangeNotifier {
         '[TAHAP 12 Provider] Berhasil mengambil ${supabaseCourses.length} Course dari Supabase',
       );
     } catch (e) {
-      supabaseError = e.toString();
+      supabaseError = _cleanErrorMessage(e);
       hasFetchedSupabase = true;
       debugPrint(
         '[TAHAP 12 Provider] Terjadi error saat fetchSupabaseCourses: $e',
@@ -322,7 +331,7 @@ class CourseProvider extends ChangeNotifier {
       await fetchSupabaseCourses();
       return true;
     } catch (e) {
-      createSupabaseCourseError = e.toString();
+      createSupabaseCourseError = _cleanErrorMessage(e);
       debugPrint(
         '[TAHAP 13 Provider] Gagal menambahkan course ke Supabase: $e',
       );
@@ -360,7 +369,7 @@ class CourseProvider extends ChangeNotifier {
       await fetchSupabaseCourses();
       return true;
     } catch (e) {
-      updateSupabaseCourseError = e.toString();
+      updateSupabaseCourseError = _cleanErrorMessage(e);
       debugPrint(
         '[TAHAP 14 Provider] Gagal memperbarui course di Supabase: $e',
       );
@@ -395,7 +404,7 @@ class CourseProvider extends ChangeNotifier {
       await fetchSupabaseCourses();
       return true;
     } catch (e) {
-      deleteSupabaseCourseError = e.toString();
+      deleteSupabaseCourseError = _cleanErrorMessage(e);
       debugPrint(
         '[TAHAP 15 Provider] Gagal menghapus course dari Supabase: $e',
       );

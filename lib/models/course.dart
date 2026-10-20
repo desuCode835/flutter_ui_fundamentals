@@ -22,7 +22,10 @@ class Course {
     this.body,
   });
 
-  // Factory constructor dari JSON (mendukung data lokal dan data REST API)
+  // ===========================================================================
+  // TAHAP 17 - KASUS C: JSON MAPPING & TYPE VALIDATION
+  // ===========================================================================
+  // Factory constructor dari JSON (mendukung data lokal, Supabase, dan data REST API)
   factory Course.fromJson(Map<String, dynamic> json) {
     // Deteksi jika JSON berasal dari REST API JSONPlaceholder
     if (json.containsKey('userId') ||
@@ -30,12 +33,78 @@ class Course {
       return Course.fromApiJson(json);
     }
 
+    // Validasi tipe field 'code'
+    final rawCode = json['code'];
+    if (rawCode != null && rawCode is! String) {
+      throw FormatException(
+        'Format field "code" tidak valid: diharapkan String tetapi menerima ${rawCode.runtimeType} ($rawCode)',
+      );
+    }
+
+    // Validasi tipe field 'title'
+    final rawTitle = json['title'];
+    if (rawTitle != null && rawTitle is! String) {
+      throw FormatException(
+        'Format field "title" tidak valid: diharapkan String tetapi menerima ${rawTitle.runtimeType} ($rawTitle)',
+      );
+    }
+
+    // Validasi tipe field 'credits'
+    final rawCredits = json['credits'];
+    int credits = 1;
+    if (rawCredits != null) {
+      if (rawCredits is num) {
+        credits = rawCredits.toInt();
+      } else if (rawCredits is String) {
+        final parsed = int.tryParse(rawCredits);
+        if (parsed != null) {
+          credits = parsed;
+        } else {
+          throw FormatException(
+            'Format field "credits" tidak valid: tidak dapat mengonversi "$rawCredits" menjadi angka integer',
+          );
+        }
+      } else {
+        throw FormatException(
+          'Format field "credits" tidak valid: diharapkan num/int tetapi menerima ${rawCredits.runtimeType} ($rawCredits)',
+        );
+      }
+    }
+
+    // Validasi tipe field 'status'
+    final rawStatus = json['status'];
+    if (rawStatus != null && rawStatus is! String) {
+      throw FormatException(
+        'Format field "status" tidak valid: diharapkan String tetapi menerima ${rawStatus.runtimeType} ($rawStatus)',
+      );
+    }
+
+    // Validasi tipe field 'id'
+    final rawId = json['id'];
+    int? id;
+    if (rawId != null) {
+      if (rawId is num) {
+        id = rawId.toInt();
+      } else if (rawId is String) {
+        id = int.tryParse(rawId);
+        if (id == null) {
+          throw FormatException(
+            'Format field "id" tidak valid: tidak dapat mengonversi "$rawId" menjadi integer',
+          );
+        }
+      } else {
+        throw FormatException(
+          'Format field "id" tidak valid: diharapkan num/int tetapi menerima ${rawId.runtimeType} ($rawId)',
+        );
+      }
+    }
+
     return Course(
-      code: json['code'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      credits: (json['credits'] as num?)?.toInt() ?? 0,
-      status: json['status'] as String? ?? 'active',
-      id: (json['id'] as num?)?.toInt(),
+      code: (rawCode as String?) ?? '',
+      title: (rawTitle as String?) ?? '',
+      credits: credits,
+      status: (rawStatus as String?) ?? 'active',
+      id: id,
     );
   }
 
@@ -43,16 +112,67 @@ class Course {
   // Struktur respons asli API: userId, id, title, body
   // Menggunakan identitas turunan POST-$id untuk code tanpa menganggapnya field asli API
   factory Course.fromApiJson(Map<String, dynamic> json) {
-    final int? id = (json['id'] as num?)?.toInt();
-    final int? userId = (json['userId'] as num?)?.toInt();
-    final String title = json['title'] as String? ?? '';
-    final String? body = json['body'] as String?;
+    // Validasi tipe field 'id'
+    final rawId = json['id'];
+    int? id;
+    if (rawId != null) {
+      if (rawId is num) {
+        id = rawId.toInt();
+      } else if (rawId is String) {
+        id = int.tryParse(rawId);
+        if (id == null) {
+          throw FormatException(
+            'Format field "id" pada REST API tidak valid: "$rawId" bukan angka integer',
+          );
+        }
+      } else {
+        throw FormatException(
+          'Format field "id" pada REST API tidak valid: diharapkan num tetapi menerima ${rawId.runtimeType}',
+        );
+      }
+    }
+
+    // Validasi tipe field 'userId'
+    final rawUserId = json['userId'];
+    int? userId;
+    if (rawUserId != null) {
+      if (rawUserId is num) {
+        userId = rawUserId.toInt();
+      } else if (rawUserId is String) {
+        userId = int.tryParse(rawUserId);
+        if (userId == null) {
+          throw FormatException(
+            'Format field "userId" pada REST API tidak valid: "$rawUserId" bukan angka integer',
+          );
+        }
+      } else {
+        throw FormatException(
+          'Format field "userId" pada REST API tidak valid: diharapkan num tetapi menerima ${rawUserId.runtimeType}',
+        );
+      }
+    }
+
+    // Validasi tipe field 'title'
+    final rawTitle = json['title'];
+    if (rawTitle != null && rawTitle is! String) {
+      throw FormatException(
+        'Format field "title" pada REST API tidak valid: diharapkan String tetapi menerima ${rawTitle.runtimeType}',
+      );
+    }
+
+    // Validasi tipe field 'body'
+    final rawBody = json['body'];
+    if (rawBody != null && rawBody is! String) {
+      throw FormatException(
+        'Format field "body" pada REST API tidak valid: diharapkan String tetapi menerima ${rawBody.runtimeType}',
+      );
+    }
 
     return Course(
       id: id,
       userId: userId,
-      title: title,
-      body: body,
+      title: (rawTitle as String?) ?? '',
+      body: rawBody as String?,
       code: id != null ? 'POST-$id' : 'POST-UNKNOWN',
       credits: 1,
       status: 'active',

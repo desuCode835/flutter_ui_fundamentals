@@ -26,8 +26,8 @@ class CourseRepository {
     this.service, [
     CourseApiService? apiService,
     CourseSupabaseService? supabaseService,
-  ])  : apiService = apiService ?? CourseApiService(),
-        supabaseService = supabaseService ?? CourseSupabaseService();
+  ]) : apiService = apiService ?? CourseApiService(),
+       supabaseService = supabaseService ?? CourseSupabaseService();
 
   /// Membaca daftar course dari aset JSON lokal via CourseService
   Future<List<Course>> getCourses() {

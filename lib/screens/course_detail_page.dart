@@ -16,7 +16,9 @@ class CourseDetailPage extends StatelessWidget {
     // 3. Hubungkan fitur Edit Course dari halaman detail agar perubahan title, credits, dan status disimpan ke tabel Supabase berdasarkan id.
     final provider = context.read<CourseProvider>();
     final matching = provider.supabaseCourses
-        .where((c) => (item.id != null && c.id == item.id) || c.code == item.code)
+        .where(
+          (c) => (item.id != null && c.id == item.id) || c.code == item.code,
+        )
         .firstOrNull;
     final targetId = item.id ?? matching?.id;
 
@@ -48,7 +50,9 @@ class CourseDetailPage extends StatelessWidget {
   Future<void> _showDeleteDialog(BuildContext context, Course item) async {
     final provider = context.read<CourseProvider>();
     final matching = provider.supabaseCourses
-        .where((c) => (item.id != null && c.id == item.id) || c.code == item.code)
+        .where(
+          (c) => (item.id != null && c.id == item.id) || c.code == item.code,
+        )
         .firstOrNull;
     final targetId = item.id ?? matching?.id;
 
@@ -226,8 +230,13 @@ class CourseDetailPage extends StatelessWidget {
     final isFavorite = courseProvider.isFavorite(course.code);
 
     // Ambil data course terbaru dari provider jika sudah diperbarui di Supabase atau lokal
-    final currentCourse = courseProvider.supabaseCourses
-            .where((c) => (course.id != null && c.id == course.id) || c.code == course.code)
+    final currentCourse =
+        courseProvider.supabaseCourses
+            .where(
+              (c) =>
+                  (course.id != null && c.id == course.id) ||
+                  c.code == course.code,
+            )
             .firstOrNull ??
         courseProvider.courses
             .where((c) => c.code == course.code)
@@ -293,7 +302,10 @@ class CourseDetailPage extends StatelessWidget {
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Text('Kode: ${currentCourse.code}', style: const TextStyle(fontSize: 17)),
+            Text(
+              'Kode: ${currentCourse.code}',
+              style: const TextStyle(fontSize: 17),
+            ),
             Text(
               'SKS: ${currentCourse.credits}',
               style: const TextStyle(fontSize: 17),
@@ -357,7 +369,9 @@ class CourseDetailPage extends StatelessWidget {
                   final wasFav = context.read<CourseProvider>().isFavorite(
                     currentCourse.code,
                   );
-                  context.read<CourseProvider>().toggleFavorite(currentCourse.code);
+                  context.read<CourseProvider>().toggleFavorite(
+                    currentCourse.code,
+                  );
 
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -479,8 +493,7 @@ class _SupabaseCourseEditDialogState extends State<SupabaseCourseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isUpdating =
-        context.watch<CourseProvider>().isUpdatingSupabaseCourse;
+    final isUpdating = context.watch<CourseProvider>().isUpdatingSupabaseCourse;
 
     return AlertDialog(
       title: const Row(

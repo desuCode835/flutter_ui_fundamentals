@@ -1,6 +1,7 @@
 // Nama : Gede Supadma
 // NIM : 2415051014
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -9,17 +10,53 @@ import 'package:http/http.dart' as http;
 import '../models/course.dart';
 
 // =============================================================================
-// TAHAP 4: SERVICE LAYER REST API (CourseApiService)
+// TAHAP 4 & 17: SERVICE LAYER REST API (CourseApiService)
 // =============================================================================
 // Bertanggung jawab melakukan request HTTP ke REST API dan memparsing respons JSON
 // menjadi List<Course> menggunakan Course.fromJson().
+// Diperkuat dengan penanganan error Kasus A (HTTP 404 & non-success),
+// Kasus B (Network failure & Timeout), serta Kasus C (JSON parsing).
 class CourseApiService {
   // Endpoint utama yang benar dan berfungsi (JSONPlaceholder Posts)
   static const String apiUrl = 'https://jsonplaceholder.typicode.com/posts';
 
+  // Durasi batas waktu standar untuk request HTTP jaringan
+  static const Duration defaultTimeout = Duration(seconds: 15);
+
   final http.Client _client;
 
   CourseApiService({http.Client? client}) : _client = client ?? http.Client();
+
+  /// Mengonversi exception jaringan/timeout/format menjadi Exception dengan pesan user-friendly
+  Never _handleError(Object e, String action) {
+    if (e is TimeoutException) {
+      final msg =
+          'Waktu koneksi habis (Timeout) saat $action. Server tidak merespons dalam waktu yang ditentukan.';
+      debugPrint('[TAHAP 17 - CourseApiService] $msg');
+      throw Exception(msg);
+    }
+    if (e is FormatException) {
+      final msg =
+          'Format data JSON dari server tidak valid saat $action: ${e.message}';
+      debugPrint('[TAHAP 17 - CourseApiService] $msg');
+      throw Exception(msg);
+    }
+    final errStr = e.toString();
+    if (e is http.ClientException ||
+        errStr.contains('SocketException') ||
+        errStr.contains('Failed host lookup') ||
+        errStr.contains('Connection refused') ||
+        errStr.contains('Network is unreachable')) {
+      final msg =
+          'Gagal terhubung ke jaringan/server saat $action. Periksa koneksi internet Anda lalu tekan coba lagi.';
+      debugPrint('[TAHAP 17 - CourseApiService] $msg');
+      throw Exception(msg);
+    }
+    debugPrint(
+      '[TAHAP 17 - CourseApiService] Terjadi kesalahan saat $action: $e',
+    );
+    throw e is Exception ? e : Exception(e.toString());
+  }
 
   /// Mengambil data dari REST API dan mengubah respons JSON menjadi `List<Course>`.
   /// Menerima parameter opsional [endpoint] untuk memfasilitasi pengujian error.
@@ -28,7 +65,9 @@ class CourseApiService {
     debugPrint('[TAHAP 4 - CourseApiService] Memulai HTTP GET ke: $targetUrl');
 
     try {
-      final response = await _client.get(Uri.parse(targetUrl));
+      final response = await _client
+          .get(Uri.parse(targetUrl))
+          .timeout(defaultTimeout);
 
       // 1. Periksa response.statusCode sebelum memproses response
       if (response.statusCode == 200) {
@@ -45,6 +84,16 @@ class CourseApiService {
           '[TAHAP 4 - CourseApiService] Berhasil memparsing ${posts.length} Course dari REST API',
         );
         return posts;
+      } else if (response.statusCode == 404) {
+        final errorMessage =
+            'Resource tidak ditemukan (HTTP 404). Silakan periksa URL endpoint atau coba lagi.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
+      } else if (response.statusCode >= 500) {
+        final errorMessage =
+            'Server mengalami gangguan internal (HTTP ${response.statusCode}). Silakan coba beberapa saat lagi.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
       } else {
         final errorMessage =
             '[TAHAP 4 - CourseApiService] Gagal mengambil data. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
@@ -52,10 +101,7 @@ class CourseApiService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint(
-        '[TAHAP 4 - CourseApiService] Terjadi kesalahan saat HTTP GET: $e',
-      );
-      rethrow;
+      _handleError(e, 'mengambil data course');
     }
   }
 
@@ -78,11 +124,13 @@ class CourseApiService {
     };
 
     try {
-      final response = await _client.post(
-        Uri.parse(targetUrl),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: jsonEncode(payload),
-      );
+      final response = await _client
+          .post(
+            Uri.parse(targetUrl),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: jsonEncode(payload),
+          )
+          .timeout(defaultTimeout);
 
       debugPrint(
         '[TAHAP 6 - CourseApiService] Response status: ${response.statusCode}',
@@ -106,6 +154,16 @@ class CourseApiService {
               data['body'] as String? ??
               'Kode: ${course.code} • SKS: ${course.credits}',
         );
+      } else if (response.statusCode == 404) {
+        final errorMessage =
+            'Endpoint pembuatan course tidak ditemukan (HTTP 404). Silakan coba lagi.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
+      } else if (response.statusCode >= 500) {
+        final errorMessage =
+            'Server mengalami kesalahan internal (HTTP ${response.statusCode}) saat membuat course.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
       } else {
         final errorMessage =
             '[TAHAP 6 - CourseApiService] Gagal membuat resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
@@ -113,10 +171,7 @@ class CourseApiService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint(
-        '[TAHAP 6 - CourseApiService] Terjadi kesalahan saat HTTP POST: $e',
-      );
-      rethrow;
+      _handleError(e, 'membuat course baru');
     }
   }
 
@@ -133,10 +188,6 @@ class CourseApiService {
     String? endpoint,
     bool usePatch = false,
   }) async {
-    // Tentukan target URL berdasarkan ID resource
-    // Jika endpoint tidak ditentukan, arahkan ke $apiUrl/$targetId
-    // Catatan: JSONPlaceholder mensimulasikan update pada post 1..100.
-    // Jika course.id di luar rentang itu (misal ID 101 dari POST lokal), gunakan ID 1 sebagai representasi server simulasi.
     final int targetId =
         (course.id != null && course.id! > 0 && course.id! <= 100)
         ? course.id!
@@ -163,9 +214,13 @@ class CourseApiService {
       final body = jsonEncode(payload);
 
       if (usePatch) {
-        response = await _client.patch(uri, headers: headers, body: body);
+        response = await _client
+            .patch(uri, headers: headers, body: body)
+            .timeout(defaultTimeout);
       } else {
-        response = await _client.put(uri, headers: headers, body: body);
+        response = await _client
+            .put(uri, headers: headers, body: body)
+            .timeout(defaultTimeout);
       }
 
       debugPrint(
@@ -192,6 +247,16 @@ class CourseApiService {
               data['body'] as String? ??
               'Kode: ${course.code} • SKS: ${course.credits}',
         );
+      } else if (response.statusCode == 404) {
+        final errorMessage =
+            'Resource course ID $targetId tidak ditemukan untuk diperbarui (HTTP 404).';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
+      } else if (response.statusCode >= 500) {
+        final errorMessage =
+            'Server mengalami kesalahan internal (HTTP ${response.statusCode}) saat memperbarui course.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
       } else {
         final errorMessage =
             '[TAHAP 7 - CourseApiService] Gagal memperbarui resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
@@ -199,10 +264,7 @@ class CourseApiService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint(
-        '[TAHAP 7 - CourseApiService] Terjadi kesalahan saat HTTP ${usePatch ? "PATCH" : "PUT"}: $e',
-      );
-      rethrow;
+      _handleError(e, 'memperbarui course');
     }
   }
 
@@ -219,7 +281,9 @@ class CourseApiService {
     );
 
     try {
-      final response = await _client.delete(Uri.parse(targetUrl));
+      final response = await _client
+          .delete(Uri.parse(targetUrl))
+          .timeout(defaultTimeout);
 
       debugPrint(
         '[TAHAP 8 - CourseApiService] Response status: ${response.statusCode}',
@@ -231,6 +295,16 @@ class CourseApiService {
           '[TAHAP 8 - CourseApiService] Berhasil menghapus resource ID: $id (Status: ${response.statusCode})',
         );
         return true;
+      } else if (response.statusCode == 404) {
+        final errorMessage =
+            'Resource course ID $id tidak ditemukan untuk dihapus (HTTP 404).';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
+      } else if (response.statusCode >= 500) {
+        final errorMessage =
+            'Server mengalami kesalahan internal (HTTP ${response.statusCode}) saat menghapus course.';
+        debugPrint('[TAHAP 17 - CourseApiService] $errorMessage');
+        throw Exception(errorMessage);
       } else {
         final errorMessage =
             '[TAHAP 8 - CourseApiService] Gagal menghapus resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
@@ -238,10 +312,7 @@ class CourseApiService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint(
-        '[TAHAP 8 - CourseApiService] Terjadi kesalahan saat HTTP DELETE: $e',
-      );
-      rethrow;
+      _handleError(e, 'menghapus course');
     }
   }
 }
