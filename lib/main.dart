@@ -3,7 +3,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/supabase_config.dart';
 import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
 import 'screens/courses_page.dart';
@@ -13,19 +15,14 @@ import 'screens/profile_page.dart';
 import 'services/course_api_service.dart';
 import 'services/course_service.dart';
 
-// ===========================================================================
-// TAHAP 15 - KASUS B: CONTEXT DI ATAS / DI LUAR PROVIDER
-// ===========================================================================
-// Penjelasan Kasus B:
-// ChangeNotifierProvider harus ditempatkan di atas widget tree yang membutuhkannya.
-// Jika context.read<CourseProvider>() atau context.watch<CourseProvider>()
-// dipanggil pada context yang berada di luar atau di atas ChangeNotifierProvider,
-// Flutter akan melempar runtime exception:
-// "ProviderNotFoundException: Could not find the correct Provider<CourseProvider> above this Widget"
-//
-// Posisi yang benar: ChangeNotifierProvider membungkus MyApp di dalam main(),
-// sehingga seluruh widget turunan di dalam MyApp memiliki akses context yang valid.
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: SupabaseConfig.supabaseUrl,
+    publishableKey: SupabaseConfig.supabaseAnonKey,
+  );
+
   final service = CourseService();
   final apiService = CourseApiService();
   final repository = CourseRepository(service, apiService);
