@@ -1,12 +1,13 @@
 # Course Explorer v2 — Flutter UI Fundamentals
 
-Aplikasi mobile Flutter untuk eksplorasi course pembelajaran dengan arsitektur bersih (*Clean Architecture* & *Separation of Concerns*) dan manajemen status terpusat menggunakan **Provider**.
+Aplikasi mobile Flutter untuk eksplorasi course pembelajaran dengan arsitektur bersih (_Clean Architecture_ & _Separation of Concerns_) dan manajemen status terpusat menggunakan **Provider**.
 
 ---
 
 ## 👤 Identitas Mahasiswa
+
 - **Nama** : Gede Supadma
-- **NIM**  : 2415051014
+- **NIM** : 2415051014
 
 ---
 
@@ -85,16 +86,19 @@ lib/
 ## 🚀 Cara Menjalankan Proyek
 
 1. **Unduh dependencies**:
+
    ```bash
    flutter pub get
    ```
 
 2. **Analisis kode**:
+
    ```bash
    flutter analyze
    ```
 
 3. **Jalankan pengujian**:
+
    ```bash
    flutter test
    ```
@@ -111,8 +115,51 @@ dan arsitektur aplikasi menggunakan Provider, ChangeNotifier, Repository,
 Service, serta pemisahan folder berdasarkan tanggung jawab.
 
 Identitas:
+
 - Nama: Gede Supadma
 - NIM: 2415051014
 
 Repository:
 https://github.com/desuCode835/flutter_ui_fundamentals
+
+## Tahap 1 — Membaca REST Endpoint dan JSON
+
+### Informasi Endpoint
+
+- **Nama API:** JSONPlaceholder
+- **URL Endpoint:** https://jsonplaceholder.typicode.com/posts/1
+- **HTTP Method:** GET
+- **Status Code:** 200 OK
+- **Resource:** posts
+- **ID Resource:** 1
+- **Content-Type:** application/json
+
+### Response Body
+
+```json
+{
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### Identifikasi Field JSON
+
+1. `userId`: menunjukkan ID pengguna yang memiliki post.
+2. `id`: menunjukkan ID post.
+3. `title`: berisi judul post.
+4. `body`: berisi isi atau konten post.
+
+### Catatan Pengamatan
+
+Endpoint diakses menggunakan HTTP method GET dan menghasilkan status code 200 OK. Response body diterima dalam format JSON dan memiliki empat field, yaitu userId, id, title, dan body.
+
+JSONPlaceholder merupakan API dummy untuk latihan. Operasi penulisan data seperti POST, PUT, PATCH, dan DELETE disimulasikan sehingga perubahan tidak disimpan secara permanen di server.
+
+### Identitas Mahasiswa
+
+- **Nama:** Gede Supadma
+- **NIM:** 2415051014
+- **Kelas:** PTI 5A
