@@ -15,7 +15,7 @@ class CourseSupabaseService {
   final SupabaseClient _client;
 
   CourseSupabaseService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   /// Supabase client yang digunakan oleh service
   SupabaseClient get client => _client;
@@ -29,8 +29,9 @@ class CourseSupabaseService {
     try {
       final response = await client.from('courses').select().order('id');
 
-      final List<Course> courses =
-          response.map((json) => Course.fromJson(json)).toList();
+      final List<Course> courses = response
+          .map((json) => Course.fromJson(json))
+          .toList();
 
       debugPrint(
         '[TAHAP 12 - CourseSupabaseService] Berhasil membaca ${courses.length} courses dari Supabase',
@@ -39,6 +40,30 @@ class CourseSupabaseService {
     } catch (e) {
       debugPrint(
         '[TAHAP 12 - CourseSupabaseService] Terjadi kesalahan saat membaca courses dari Supabase: $e',
+      );
+      rethrow;
+    }
+  }
+
+  //Nama : Gede Supadma
+  //NIM : 2415051014
+  // ===========================================================================
+  // TAHAP 13: INSERT — MENAMBAH DATA KE DATABASE SUPABASE
+  // ===========================================================================
+  /// Menambahkan course baru ke tabel `courses` di Supabase.
+  Future<void> createCourse(Course course) async {
+    debugPrint(
+      '[TAHAP 13 - CourseSupabaseService] Menambahkan course ke Supabase: ${course.code} - ${course.title}',
+    );
+
+    try {
+      await client.from('courses').insert(course.toJson());
+      debugPrint(
+        '[TAHAP 13 - CourseSupabaseService] Berhasil menambahkan course ke Supabase',
+      );
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 13 - CourseSupabaseService] Terjadi kesalahan saat insert course ke Supabase: $e',
       );
       rethrow;
     }

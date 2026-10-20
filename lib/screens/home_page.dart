@@ -833,6 +833,7 @@ class _CoursePostFormState extends State<CoursePostForm> {
   final _codeController = TextEditingController();
   final _titleController = TextEditingController();
   final _creditsController = TextEditingController();
+  String _selectedStatus = 'active';
 
   @override
   void dispose() {
@@ -851,12 +852,13 @@ class _CoursePostFormState extends State<CoursePostForm> {
     final code = _codeController.text.trim();
     final title = _titleController.text.trim();
     final credits = int.parse(_creditsController.text.trim());
+    final status = _selectedStatus.trim();
 
     final newCourse = Course(
       code: code,
       title: title,
       credits: credits,
-      status: 'active',
+      status: status,
       body: 'Kode: $code • SKS: $credits',
       userId: 1,
     );
@@ -885,6 +887,9 @@ class _CoursePostFormState extends State<CoursePostForm> {
       _codeController.clear();
       _titleController.clear();
       _creditsController.clear();
+      setState(() {
+        _selectedStatus = 'active';
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -898,9 +903,75 @@ class _CoursePostFormState extends State<CoursePostForm> {
     }
   }
 
+  // ===========================================================================
+  // TAHAP 13: SUBMIT INSERT KE DATABASE SUPABASE
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  Future<void> _submitSupabase() async {
+    // 4. Validasi kode, judul, jumlah SKS, dan status sebelum menyimpan
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final code = _codeController.text.trim();
+    final title = _titleController.text.trim();
+    final credits = int.parse(_creditsController.text.trim());
+    final status = _selectedStatus.trim();
+
+    if (code.isEmpty || title.isEmpty || credits <= 0 || status.isEmpty) {
+      return;
+    }
+
+    final newCourse = Course(
+      code: code,
+      title: title,
+      credits: credits,
+      status: status,
+    );
+
+    // 3. Tombol baru harus memanggil method createSupabaseCourse() di provider
+    final provider = context.read<CourseProvider>();
+    final success = await provider.createSupabaseCourse(newCourse);
+
+    if (!mounted) return;
+
+    // 5. Setelah berhasil, perbarui daftar course dari Supabase dan tampilkan pesan keberhasilan. Jika gagal, tampilkan pesan error.
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Berhasil menyimpan course "$code - $title" ke database Supabase! Data terbaru telah dimuat.',
+          ),
+          backgroundColor: Colors.teal.shade800,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      _formKey.currentState!.reset();
+      _codeController.clear();
+      _titleController.clear();
+      _creditsController.clear();
+      setState(() {
+        _selectedStatus = 'active';
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal menyimpan ke Supabase: ${provider.createSupabaseCourseError ?? "Terjadi kesalahan"}',
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isCreating = context.watch<CourseProvider>().isCreatingCourse;
+    final courseProvider = context.watch<CourseProvider>();
+    final isCreating = courseProvider.isCreatingCourse;
+    final isCreatingSupabase = courseProvider.isCreatingSupabaseCourse;
 
     return Card(
       elevation: 0,
@@ -925,7 +996,7 @@ class _CoursePostFormState extends State<CoursePostForm> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Tahap 6 — HTTP POST: Tambah Course Baru',
+                      'Tahap 6 & 13 — Tambah Course Baru (REST API & Supabase)',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
@@ -937,7 +1008,7 @@ class _CoursePostFormState extends State<CoursePostForm> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Mengirim payload JSON via HTTP POST ke https://jsonplaceholder.typicode.com/posts',
+                'Simpan ke REST API (HTTP POST) atau langsung ke Database Supabase (tabel courses)',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
               ),
               const SizedBox(height: 16),
@@ -1014,6 +1085,48 @@ class _CoursePostFormState extends State<CoursePostForm> {
                   return null;
                 },
               ),
+              const SizedBox(height: 12),
+
+              // Field 4: Status Course
+              DropdownButtonFormField<String>(
+                initialValue: _selectedStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Status Course',
+                  prefixIcon: Icon(Icons.flag_outlined),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'active',
+                    child: Text('active (Aktif)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'planned',
+                    child: Text('planned (Rencana)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'done',
+                    child: Text('done (Selesai)'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedStatus = value;
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Status course wajib dipilih';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 16),
 
               // Action buttons
@@ -1022,8 +1135,42 @@ class _CoursePostFormState extends State<CoursePostForm> {
                 runSpacing: 10,
                 alignment: WrapAlignment.center,
                 children: [
+                  // Tombol baru: Simpan ke Supabase (Tahap 13)
                   ElevatedButton.icon(
-                    onPressed: isCreating ? null : () => _submit(),
+                    onPressed: (isCreating || isCreatingSupabase)
+                        ? null
+                        : () => _submitSupabase(),
+                    icon: isCreatingSupabase
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.cloud_upload),
+                    label: Text(
+                      isCreatingSupabase
+                          ? 'Menyimpan...'
+                          : 'Simpan ke Supabase',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00796B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+
+                  // Tombol lama: Simpan (HTTP POST) (Tahap 6)
+                  ElevatedButton.icon(
+                    onPressed: (isCreating || isCreatingSupabase)
+                        ? null
+                        : () => _submit(),
                     icon: isCreating
                         ? const SizedBox(
                             width: 18,
@@ -1046,8 +1193,10 @@ class _CoursePostFormState extends State<CoursePostForm> {
                       ),
                     ),
                   ),
+
+                  // Tombol lama: Uji Error POST (Tahap 6)
                   OutlinedButton.icon(
-                    onPressed: isCreating
+                    onPressed: (isCreating || isCreatingSupabase)
                         ? null
                         : () => _submit(simulateError: true),
                     icon: const Icon(Icons.error_outline),
@@ -1066,7 +1215,7 @@ class _CoursePostFormState extends State<CoursePostForm> {
               const SizedBox(height: 8),
               Text(
                 '* Catatan: REST API JSONPlaceholder mensimulasikan pembuatan resource (HTTP 201 Created). '
-                'Hasil POST langsung diperbarui ke daftar di bawah untuk membuktikan integrasi UI.',
+                'Simpan ke Supabase akan langsung meng-INSERT baris data baru ke tabel courses di database Supabase.',
                 style: TextStyle(
                   fontSize: 11,
                   fontStyle: FontStyle.italic,

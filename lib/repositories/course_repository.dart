@@ -43,6 +43,19 @@ class CourseRepository {
   }
 
   // ===========================================================================
+  // TAHAP 13: METHOD INSERT COURSE MELALUI CourseSupabaseService
+  // ===========================================================================
+  /// Menambahkan course baru ke database Supabase (tabel courses)
+  Future<void> createSupabaseCourse(Course course) {
+    return supabaseService.createCourse(course);
+  }
+
+  /// Alias method addSupabaseCourse untuk fleksibilitas pemanggilan
+  Future<void> addSupabaseCourse(Course course) {
+    return createSupabaseCourse(course);
+  }
+
+  // ===========================================================================
   // TAHAP 4: METHOD HTTP GET POSTS MELALUI CourseApiService
   // ===========================================================================
   Future<List<Course>> getPosts({String? endpoint}) {
