@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/course.dart';
 import '../repositories/course_repository.dart';
-import '../services/course_api_service.dart';
 
 // =============================================================================
 // TAHAP 15: DOKUMENTASI DEBUGGING PROVIDER & CHANGENOTIFIER
@@ -51,7 +50,7 @@ class CourseProvider extends ChangeNotifier {
   Future<void> fetchPosts({String? endpoint}) async {
     isPostsLoading = true;
     postsError = null;
-    lastFetchedUrl = endpoint ?? CourseApiService.apiUrl;
+    lastFetchedUrl = endpoint ?? CourseRepository.apiUrl;
     notifyListeners();
 
     try {
@@ -75,7 +74,7 @@ class CourseProvider extends ChangeNotifier {
   /// Tombol Retry: Memanggil ulang proses pengambilan data menggunakan endpoint normal yang benar
   Future<void> retryFetchPosts() {
     debugPrint(
-      '[TAHAP 5 Provider] Tombol Retry ditekan, mencoba ulang dengan endpoint normal: ${CourseApiService.apiUrl}',
+      '[TAHAP 5 Provider] Tombol Retry ditekan, mencoba ulang dengan endpoint normal: ${CourseRepository.apiUrl}',
     );
     return fetchPosts();
   }
