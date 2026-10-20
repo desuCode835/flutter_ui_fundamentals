@@ -56,6 +56,14 @@ class CourseRepository {
   }
 
   // ===========================================================================
+  // TAHAP 14: METHOD UPDATE COURSE MELALUI CourseSupabaseService
+  // ===========================================================================
+  /// Memperbarui course di database Supabase (tabel courses) berdasarkan id
+  Future<void> updateSupabaseCourse(Course course, {int? id}) {
+    return supabaseService.updateCourse(course, id: id);
+  }
+
+  // ===========================================================================
   // TAHAP 4: METHOD HTTP GET POSTS MELALUI CourseApiService
   // ===========================================================================
   Future<List<Course>> getPosts({String? endpoint}) {

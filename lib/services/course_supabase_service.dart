@@ -68,4 +68,41 @@ class CourseSupabaseService {
       rethrow;
     }
   }
+
+  // Nama : Gede Supadma
+  // NIM : 2415051014
+  // ===========================================================================
+  // TAHAP 14: UPDATE — MENGUBAH DATA DI DATABASE SUPABASE
+  // ===========================================================================
+  /// Memperbarui data course di tabel `courses` di Supabase berdasarkan `id`.
+  /// Menyimpan perubahan title, credits, dan status.
+  Future<void> updateCourse(Course course, {int? id}) async {
+    final targetId = id ?? course.id;
+    if (targetId == null) {
+      throw Exception(
+        'ID course wajib tersedia untuk melakukan UPDATE di Supabase',
+      );
+    }
+
+    debugPrint(
+      '[TAHAP 14 - CourseSupabaseService] Memperbarui course ID $targetId di Supabase...',
+    );
+
+    try {
+      await client.from('courses').update({
+        'title': course.title,
+        'credits': course.credits,
+        'status': course.status,
+      }).eq('id', targetId);
+
+      debugPrint(
+        '[TAHAP 14 - CourseSupabaseService] Berhasil memperbarui course ID $targetId di Supabase: ${course.title}',
+      );
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 14 - CourseSupabaseService] Terjadi kesalahan saat update course di Supabase: $e',
+      );
+      rethrow;
+    }
+  }
 }

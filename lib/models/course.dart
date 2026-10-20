@@ -35,6 +35,7 @@ class Course {
       title: json['title'] as String? ?? '',
       credits: (json['credits'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? 'active',
+      id: (json['id'] as num?)?.toInt(),
     );
   }
 
@@ -82,7 +83,7 @@ class Course {
   // Method toJson untuk serialisasi objek kembali ke Map<String, dynamic>
   // Menjaga integritas payload tanpa menyertakan field buatan ke API payload
   Map<String, dynamic> toJson() {
-    if (id != null || userId != null || body != null) {
+    if (userId != null || body != null) {
       return {
         if (userId != null) 'userId': userId,
         if (id != null) 'id': id,

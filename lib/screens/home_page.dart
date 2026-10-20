@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/course.dart';
 import '../providers/course_provider.dart';
+import 'course_detail_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -1922,6 +1923,24 @@ class SupabaseCourseSection extends StatelessWidget {
                                   ),
                                 ],
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit_note,
+                                color: Color(0xFF00796B),
+                                size: 24,
+                              ),
+                              tooltip: 'Edit di Halaman Detail',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CourseDetailPage(course: item),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

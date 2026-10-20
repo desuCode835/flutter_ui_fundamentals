@@ -336,6 +336,41 @@ class CourseProvider extends ChangeNotifier {
   /// Alias method addSupabaseCourse untuk konsistensi pemanggilan
   Future<bool> addSupabaseCourse(Course course) => createSupabaseCourse(course);
 
+  // ===========================================================================
+  // TAHAP 14: UPDATE COURSE DI SUPABASE (Mengubah Data di Database)
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  bool isUpdatingSupabaseCourse = false;
+  String? updateSupabaseCourseError;
+
+  /// Memperbarui data course di database Supabase melalui CourseRepository.
+  /// Setelah UPDATE berhasil, memanggil kembali fetchSupabaseCourses() agar data terbaru tampil.
+  Future<bool> updateSupabaseCourse(Course course, {int? id}) async {
+    isUpdatingSupabaseCourse = true;
+    updateSupabaseCourseError = null;
+    notifyListeners();
+
+    try {
+      await repository.updateSupabaseCourse(course, id: id);
+      debugPrint(
+        '[TAHAP 14 Provider] Berhasil memperbarui course di Supabase (ID: ${id ?? course.id}): ${course.title}',
+      );
+      // Panggil kembali fetchSupabaseCourses() agar daftar data terbaru tampil
+      await fetchSupabaseCourses();
+      return true;
+    } catch (e) {
+      updateSupabaseCourseError = e.toString();
+      debugPrint(
+        '[TAHAP 14 Provider] Gagal memperbarui course di Supabase: $e',
+      );
+      return false;
+    } finally {
+      isUpdatingSupabaseCourse = false;
+      notifyListeners();
+    }
+  }
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }
