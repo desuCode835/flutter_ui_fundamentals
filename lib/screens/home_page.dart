@@ -91,7 +91,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Tahap 4 — Service Layer (CourseApiService)',
+                            'Tahap 5 — State UI: Loading, Success, Empty, Error',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
@@ -123,7 +123,7 @@ class HomePage extends StatelessWidget {
                                   context.read<CourseProvider>().fetchPosts();
                                 },
                           icon: const Icon(Icons.cloud_download),
-                          label: const Text('Uji HTTP GET (Normal)'),
+                          label: const Text('Uji Success (Normal)'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1976D2),
                             foregroundColor: Colors.white,
@@ -144,30 +144,54 @@ class HomePage extends StatelessWidget {
                             side: BorderSide(color: Colors.red.shade300),
                           ),
                         ),
+                        OutlinedButton.icon(
+                          onPressed: courseProvider.isPostsLoading
+                              ? null
+                              : () {
+                                  context.read<CourseProvider>().fetchPosts(
+                                    endpoint: 'https://jsonplaceholder.typicode.com/posts?userId=99999',
+                                  );
+                                },
+                          icon: const Icon(Icons.inbox_outlined),
+                          label: const Text('Uji Empty State'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.amber.shade900,
+                            side: BorderSide(color: Colors.amber.shade400),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Indikator Status & Hasil
+                    // ====================================================
+                    // 1. KONDISI LOADING STATE
+                    // ====================================================
                     if (courseProvider.isPostsLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Column(
                           children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 8),
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 12),
                             Text(
-                              'Mengirim HTTP GET melalui CourseApiService...',
+                              'Memuat data dari REST API...',
+                              style: TextStyle(
+                                color: Colors.blue.shade900,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
                       )
+                    // ====================================================
+                    // 2. KONDISI ERROR STATE DENGAN TOMBOL RETRY
+                    // ====================================================
                     else if (courseProvider.postsError != null)
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.red.shade200),
                         ),
                         child: Column(
@@ -176,21 +200,22 @@ class HomePage extends StatelessWidget {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.cancel,
+                                  Icons.error_outline,
                                   color: Colors.red.shade700,
-                                  size: 20,
+                                  size: 24,
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Error Tertangkap:',
+                                  'Gagal Memuat Data',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                     color: Colors.red.shade900,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
                             Text(
                               courseProvider.postsError!,
                               style: TextStyle(
@@ -199,18 +224,93 @@ class HomePage extends StatelessWidget {
                               ),
                             ),
                             if (courseProvider.lastFetchedUrl != null) ...[
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
-                                'URL: ${courseProvider.lastFetchedUrl}',
+                                'URL yang diuji: ${courseProvider.lastFetchedUrl}',
                                 style: TextStyle(
                                   fontSize: 11,
+                                  fontFamily: 'monospace',
                                   color: Colors.grey.shade700,
                                 ),
                               ),
                             ],
+                            const SizedBox(height: 14),
+                            // Tombol Retry: Memanggil ulang proses pengambilan data via Provider
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                context
+                                    .read<CourseProvider>()
+                                    .retryFetchPosts();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry (Coba Lagi)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade700,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
                           ],
                         ),
                       )
+                    // ====================================================
+                    // 3. KONDISI EMPTY STATE (DATA COURSE BELUM TERSEDIA)
+                    // ====================================================
+                    else if (courseProvider.isPostsEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.shade200),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inbox_outlined,
+                              size: 48,
+                              color: Colors.amber.shade800,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Data course belum tersedia',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Request berhasil diterima (HTTP 200 OK), namun tidak ada item data yang ditemukan.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                context
+                                    .read<CourseProvider>()
+                                    .retryFetchPosts();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Muat Data Normal'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1976D2),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    // ====================================================
+                    // 4. KONDISI SUCCESS STATE (DAFTAR DATA REST API)
+                    // ====================================================
                     else if (courseProvider.posts.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.all(14),
@@ -244,7 +344,7 @@ class HomePage extends StatelessWidget {
                                         ),
                                       ),
                                       Text(
-                                        '[TAHAP 4] Berhasil memparsing ${courseProvider.posts.length} Course via CourseApiService',
+                                        '[TAHAP 5] Berhasil memparsing ${courseProvider.posts.length} Course via CourseApiService',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -258,7 +358,7 @@ class HomePage extends StatelessWidget {
                             ),
                             const Divider(height: 20),
                             Text(
-                              'Hasil Parsing API ke Model Course (min. 3 item):',
+                              'Hasil Data API (Model Course):',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -359,6 +459,9 @@ class HomePage extends StatelessWidget {
                           ],
                         ),
                       )
+                    // ====================================================
+                    // 5. KONDISI INITIAL STATE (BELUM ADA REQUEST)
+                    // ====================================================
                     else
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -377,7 +480,7 @@ class HomePage extends StatelessWidget {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Tekan tombol di atas untuk menjalankan HTTP GET request.',
+                                'Tekan tombol di atas untuk menjalankan pengujian state (Loading, Success, Empty, Error).',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey,

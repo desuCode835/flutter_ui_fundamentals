@@ -28,14 +28,25 @@ class CourseProvider extends ChangeNotifier {
   final Set<String> favorites = {};
 
   // ===========================================================================
-  // TAHAP 4: STATE & HTTP GET REST API (List<Course>)
+  // TAHAP 5: STATE PENGAMBILAN DATA REST API (Loading, Success, Empty, Error)
   // ===========================================================================
   // Nama : Gede Supadma
   // NIM  : 2415051014
   List<Course> posts = [];
   bool isPostsLoading = false;
   String? postsError;
+  bool hasFetchedPosts = false;
   String? lastFetchedUrl;
+
+  // Getters helper state Tahap 5
+  String? get errorMessage => postsError;
+  bool get isPostsEmpty =>
+      hasFetchedPosts && !isPostsLoading && postsError == null && posts.isEmpty;
+  bool get isPostsSuccess =>
+      hasFetchedPosts &&
+      !isPostsLoading &&
+      postsError == null &&
+      posts.isNotEmpty;
 
   Future<void> fetchPosts({String? endpoint}) async {
     isPostsLoading = true;
@@ -45,16 +56,37 @@ class CourseProvider extends ChangeNotifier {
 
     try {
       posts = await repository.getPosts(endpoint: endpoint);
+      hasFetchedPosts = true;
       debugPrint(
-        '[TAHAP 4 Provider] Berhasil memperbarui state dengan ${posts.length} Course',
+        '[TAHAP 5 Provider] Berhasil mengambil ${posts.length} Course (State: ${posts.isEmpty ? "EMPTY" : "SUCCESS"})',
       );
     } catch (e) {
       postsError = e.toString();
-      debugPrint('[TAHAP 4 Provider] Terjadi error saat fetchPosts: $e');
+      hasFetchedPosts = true;
+      debugPrint(
+        '[TAHAP 5 Provider] Terjadi error saat fetchPosts (State: ERROR): $e',
+      );
     } finally {
       isPostsLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Tombol Retry: Memanggil ulang proses pengambilan data menggunakan endpoint normal yang benar
+  Future<void> retryFetchPosts() {
+    debugPrint(
+      '[TAHAP 5 Provider] Tombol Retry ditekan, mencoba ulang dengan endpoint normal: ${CourseApiService.apiUrl}',
+    );
+    return fetchPosts();
+  }
+
+  /// Simulasi / reset state kosong (Empty State)
+  void clearPosts() {
+    posts = [];
+    hasFetchedPosts = true;
+    postsError = null;
+    isPostsLoading = false;
+    notifyListeners();
   }
 
   bool isFavorite(String code) {
