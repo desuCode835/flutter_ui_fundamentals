@@ -14,7 +14,11 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const CircleAvatar(radius: 45, child: Icon(Icons.person, size: 50)),
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: Color(0xFFBBDEFB),
+              backgroundImage: AssetImage('assets/images/profile.jpg'),
+            ),
             const SizedBox(height: 12),
             const Text(
               'Gede Supadma',
@@ -108,11 +112,15 @@ class _FeedbackFormState extends State<FeedbackForm> {
 
     // Pengecekan apakah widget masih terpasang pada widget tree setelah async
     if (!mounted) {
-      debugPrint('[DEBUG - Kasus D] Widget unmounted, setState dibatalkan demi keamanan.');
+      debugPrint(
+        '[DEBUG - Kasus D] Widget unmounted, setState dibatalkan demi keamanan.',
+      );
       return;
     }
 
-    debugPrint('[DEBUG - Kasus D] Widget mounted, memanggil setState() untuk mematikan loading.');
+    debugPrint(
+      '[DEBUG - Kasus D] Widget mounted, memanggil setState() untuk mematikan loading.',
+    );
     setState(() {
       isLoading = false;
     });
