@@ -12,13 +12,12 @@ import '../models/course.dart';
 // Bertanggung jawab membaca data dari database Supabase (tabel courses)
 // menggunakan Supabase.instance.client.
 class CourseSupabaseService {
-  final SupabaseClient _client;
+  final SupabaseClient? _client;
 
-  CourseSupabaseService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  CourseSupabaseService({SupabaseClient? client}) : _client = client;
 
   /// Supabase client yang digunakan oleh service
-  SupabaseClient get client => _client;
+  SupabaseClient get client => _client ?? Supabase.instance.client;
 
   /// Membaca daftar course dari tabel `courses` di Supabase dan mengurutkannya berdasarkan `id`.
   Future<List<Course>> getCourses() async {
