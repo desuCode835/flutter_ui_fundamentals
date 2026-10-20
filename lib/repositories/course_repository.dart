@@ -26,4 +26,11 @@ class CourseRepository {
   Future<List<Course>> getPosts({String? endpoint}) {
     return apiService.fetchPosts(endpoint: endpoint);
   }
+
+  // ===========================================================================
+  // TAHAP 6: METHOD HTTP POST COURSE MELALUI CourseApiService
+  // ===========================================================================
+  Future<Course> addCourse(Course course, {String? endpoint}) {
+    return apiService.createCourse(course, endpoint: endpoint);
+  }
 }

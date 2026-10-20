@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/course.dart';
 import '../providers/course_provider.dart';
 
 class HomePage extends StatelessWidget {
@@ -71,7 +72,13 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // ====================================================
-            // TAHAP 2: PENGUJIAN HTTP GET REST API
+            // TAHAP 6: FORM TAMBAH COURSE BARU (HTTP POST)
+            // ====================================================
+            const CoursePostForm(),
+            const SizedBox(height: 20),
+
+            // ====================================================
+            // TAHAP 5: STATE UI (LOADING, SUCCESS, EMPTY, ERROR)
             // ====================================================
             Card(
               elevation: 0,
@@ -507,6 +514,273 @@ class HomePage extends StatelessWidget {
               label: const Text('Tampilkan Info'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// TAHAP 6: WIDGET FORM TAMBAH COURSE BARU (HTTP POST)
+// =============================================================================
+// Nama : Gede Supadma
+// NIM  : 2415051014
+class CoursePostForm extends StatefulWidget {
+  const CoursePostForm({super.key});
+
+  @override
+  State<CoursePostForm> createState() => _CoursePostFormState();
+}
+
+class _CoursePostFormState extends State<CoursePostForm> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _codeController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _creditsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _titleController.dispose();
+    _creditsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit({bool simulateError = false}) async {
+    // 2. Validasi seluruh field wajib diisi dan credits angka
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final code = _codeController.text.trim();
+    final title = _titleController.text.trim();
+    final credits = int.parse(_creditsController.text.trim());
+
+    final newCourse = Course(
+      code: code,
+      title: title,
+      credits: credits,
+      status: 'active',
+      body: 'Kode: $code • SKS: $credits',
+      userId: 1,
+    );
+
+    final provider = context.read<CourseProvider>();
+    final endpoint = simulateError
+        ? 'https://jsonplaceholder.typicode.com/invalid_posts_endpoint_for_test'
+        : null;
+
+    final success = await provider.createCourse(newCourse, endpoint: endpoint);
+
+    if (!mounted) return;
+
+    // 5. Tampilkan SnackBar untuk hasil berhasil maupun gagal
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Berhasil membuat course "$code - $title" (HTTP 201 Created)! Data ditambahkan ke daftar.',
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      _formKey.currentState!.reset();
+      _codeController.clear();
+      _titleController.clear();
+      _creditsController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Gagal membuat course: ${provider.createCourseError ?? "Terjadi kesalahan"}',
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCreating = context.watch<CourseProvider>().isCreatingCourse;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.blue.shade200),
+      ),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.add_circle_outline,
+                    color: Color(0xFF1565C0),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tahap 6 — HTTP POST: Tambah Course Baru',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Mengirim payload JSON via HTTP POST ke https://jsonplaceholder.typicode.com/posts',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 16),
+
+              // Field 1: Kode Course
+              TextFormField(
+                controller: _codeController,
+                decoration: const InputDecoration(
+                  labelText: 'Kode Course',
+                  hintText: 'Misal: MOB06',
+                  prefixIcon: Icon(Icons.code),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Kode course wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Field 2: Judul Course
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Judul Course',
+                  hintText: 'Misal: Pemrograman REST API Flutter',
+                  prefixIcon: Icon(Icons.book_outlined),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Judul course wajib diisi';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Field 3: SKS (Credits)
+              TextFormField(
+                controller: _creditsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'SKS (Credits)',
+                  hintText: 'Misal: 3',
+                  prefixIcon: Icon(Icons.numbers),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'SKS wajib diisi';
+                  }
+                  final credits = int.tryParse(value.trim());
+                  if (credits == null) {
+                    return 'SKS harus berupa angka bulat';
+                  }
+                  if (credits <= 0) {
+                    return 'SKS harus lebih besar dari 0';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Action buttons
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: isCreating ? null : () => _submit(),
+                    icon: isCreating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.send),
+                    label: Text(
+                      isCreating ? 'Mengirim POST...' : 'Simpan (HTTP POST)',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1976D2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: isCreating
+                        ? null
+                        : () => _submit(simulateError: true),
+                    icon: const Icon(Icons.error_outline),
+                    label: const Text('Uji Error POST'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700,
+                      side: BorderSide(color: Colors.red.shade300),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '* Catatan: REST API JSONPlaceholder mensimulasikan pembuatan resource (HTTP 201 Created). '
+                'Hasil POST langsung diperbarui ke daftar di bawah untuk membuktikan integrasi UI.',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

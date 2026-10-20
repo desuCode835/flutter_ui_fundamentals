@@ -58,4 +58,65 @@ class CourseApiService {
       rethrow;
     }
   }
+
+  /// ===========================================================================
+  /// TAHAP 6: HTTP POST — MEMBUAT RESOURCE BARU
+  /// ===========================================================================
+  /// Mengirim request HTTP POST menggunakan `http.post`, header `Content-Type: application/json; charset=UTF-8`,
+  /// dan `jsonEncode` untuk payload.
+  /// Menerima parameter opsional [endpoint] untuk pengujian skenario error.
+  Future<Course> createCourse(Course course, {String? endpoint}) async {
+    final targetUrl = endpoint ?? apiUrl;
+    debugPrint('[TAHAP 6 - CourseApiService] Memulai HTTP POST ke: $targetUrl');
+
+    final payload = {
+      'title': course.title,
+      'body': 'Kode: ${course.code} • SKS: ${course.credits}',
+      'code': course.code,
+      'credits': course.credits,
+      'userId': course.userId ?? 1,
+    };
+
+    try {
+      final response = await _client.post(
+        Uri.parse(targetUrl),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode(payload),
+      );
+
+      debugPrint(
+        '[TAHAP 6 - CourseApiService] Response status: ${response.statusCode}',
+      );
+
+      // 4. Tangani respons berhasil dengan status 200 atau 201
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> data =
+            jsonDecode(response.body) as Map<String, dynamic>;
+
+        debugPrint('[TAHAP 6 - CourseApiService] POST Berhasil: $data');
+
+        return Course(
+          code: course.code,
+          title: data['title'] as String? ?? course.title,
+          credits: course.credits,
+          status: 'active',
+          id: (data['id'] as num?)?.toInt() ?? 101,
+          userId: (data['userId'] as num?)?.toInt() ?? 1,
+          body:
+              data['body'] as String? ??
+              'Kode: ${course.code} • SKS: ${course.credits}',
+        );
+      } else {
+        final errorMessage =
+            '[TAHAP 6 - CourseApiService] Gagal membuat resource. Status Code: ${response.statusCode} (${response.reasonPhrase ?? 'Error'})';
+        debugPrint(errorMessage);
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint(
+        '[TAHAP 6 - CourseApiService] Terjadi kesalahan saat HTTP POST: $e',
+      );
+      rethrow;
+    }
+  }
 }

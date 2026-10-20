@@ -28,6 +28,11 @@ class CourseService {
     return _apiService.fetchPosts(endpoint: endpoint);
   }
 
+  /// Forwarder createCourse ke CourseApiService untuk kompatibilitas
+  Future<Course> createCourse(Course course, {String? endpoint}) {
+    return _apiService.createCourse(course, endpoint: endpoint);
+  }
+
   // ===========================================================================
   // TAHAP 15 - KASUS C: DEBUGGING PATH ASSET JSON
   // ===========================================================================

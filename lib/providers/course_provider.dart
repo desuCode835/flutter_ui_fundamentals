@@ -89,6 +89,45 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ===========================================================================
+  // TAHAP 6: HTTP POST — MEMBUAT RESOURCE BARU
+  // ===========================================================================
+  // Nama : Gede Supadma
+  // NIM  : 2415051014
+  bool isCreatingCourse = false;
+  String? createCourseError;
+
+  Future<bool> createCourse(Course course, {String? endpoint}) async {
+    isCreatingCourse = true;
+    createCourseError = null;
+    notifyListeners();
+
+    try {
+      final createdCourse = await repository.addCourse(
+        course,
+        endpoint: endpoint,
+      );
+
+      // 6. Perbarui daftar agar hasil terbaru langsung terlihat di UI
+      // Sisipkan di posisi pertama (index 0) agar langsung tampak di daftar atas
+      posts.insert(0, createdCourse);
+      hasFetchedPosts = true;
+      postsError = null;
+
+      debugPrint(
+        '[TAHAP 6 Provider] Berhasil membuat course: ${createdCourse.code} - ${createdCourse.title} (Total posts: ${posts.length})',
+      );
+      return true;
+    } catch (e) {
+      createCourseError = e.toString();
+      debugPrint('[TAHAP 6 Provider] Gagal membuat course: $e');
+      return false;
+    } finally {
+      isCreatingCourse = false;
+      notifyListeners();
+    }
+  }
+
   bool isFavorite(String code) {
     return favorites.contains(code);
   }
