@@ -281,25 +281,33 @@ class CourseProvider extends ChangeNotifier {
       supabaseCourses.isNotEmpty;
 
   /// Membaca daftar course dari database Supabase melalui CourseRepository
+  /// Menyinkronkan data Supabase ke state `supabaseCourses` dan `courses`
+  /// agar seluruh halaman UI (Home, Courses, Favorites) selalu konsisten.
   Future<void> fetchSupabaseCourses() async {
     isSupabaseLoading = true;
+    isLoading = true;
     supabaseError = null;
+    error = null;
     notifyListeners();
 
     try {
       supabaseCourses = await repository.getSupabaseCourses();
+      // Sinkronkan ke courses agar Halaman Courses dan fitur favorit juga menggunakan data Supabase
+      courses = List<Course>.from(supabaseCourses);
       hasFetchedSupabase = true;
       debugPrint(
-        '[TAHAP 12 Provider] Berhasil mengambil ${supabaseCourses.length} Course dari Supabase',
+        '[TAHAP 12 Provider] Berhasil mengambil ${supabaseCourses.length} Course dari Supabase (tersinkron ke courses)',
       );
     } catch (e) {
       supabaseError = _cleanErrorMessage(e);
+      error = supabaseError;
       hasFetchedSupabase = true;
       debugPrint(
         '[TAHAP 12 Provider] Terjadi error saat fetchSupabaseCourses: $e',
       );
     } finally {
       isSupabaseLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
@@ -456,8 +464,17 @@ class CourseProvider extends ChangeNotifier {
   // ===========================================================================
   // Nama : Gede Supadma
   // NIM : 2415051014
-  Future<void> loadCourses() async {
-    debugPrint('[DEBUG - Kasus C] loadCourses() dimulai (state: loading)');
+  /// Memuat courses dengan default menggunakan Supabase sebagai Single Source of Truth.
+  /// Parameter [useSupabase] bernilai true secara default agar Halaman Courses tersinkron dengan Supabase.
+  Future<void> loadCourses({bool useSupabase = true}) async {
+    debugPrint(
+      '[DEBUG - Kasus C] loadCourses() dimulai (state: loading, useSupabase: $useSupabase)',
+    );
+    if (useSupabase) {
+      await fetchSupabaseCourses();
+      return;
+    }
+
     isLoading = true;
     error = null;
     notifyListeners();
@@ -465,15 +482,18 @@ class CourseProvider extends ChangeNotifier {
     try {
       courses = await repository.getCourses();
       debugPrint(
-        '[DEBUG - Kasus C] Data courses berhasil dimuat: ${courses.length} item',
+        '[DEBUG - Kasus C] Data courses berhasil dimuat dari lokal: ${courses.length} item',
       );
     } catch (e) {
       error = e.toString();
-      debugPrint('[DEBUG - Kasus C] Terjadi error saat membaca data: $e');
+      debugPrint('[DEBUG - Kasus C] Terjadi error saat membaca data lokal: $e');
     } finally {
       isLoading = false;
       notifyListeners();
       debugPrint('[DEBUG - Kasus C] loadCourses() selesai (state: selesai)');
     }
   }
+
+  /// Membaca data aset lokal (student_data.json) untuk kebutuhan backward compatibility
+  Future<void> loadLocalCourses() => loadCourses(useSupabase: false);
 }

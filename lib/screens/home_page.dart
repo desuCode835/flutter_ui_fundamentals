@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/course.dart';
 import '../providers/course_provider.dart';
@@ -256,6 +257,12 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // ====================================================
+            // WORKSHEET 9 - PRAKTIK 1: INFORMASI PENGGUNA SUPABASE AUTH
+            // ====================================================
+            const SupabaseUserCard(),
             const SizedBox(height: 20),
 
             // ====================================================
@@ -2172,6 +2179,151 @@ class SupabaseCourseSection extends StatelessWidget {
                   ],
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// WORKSHEET 9 - PRAKTIK 1: KARTU STATUS SESI SUPABASE AUTH
+// =============================================================================
+class SupabaseUserCard extends StatelessWidget {
+  const SupabaseUserCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    User? user;
+    try {
+      user = Supabase.instance.client.auth.currentUser;
+    } catch (_) {
+      user = null;
+    }
+    final email = user?.email ?? 'Belum login (Mode Tamu)';
+    final userId = user?.id ?? '-';
+    final isAuthed = user != null;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isAuthed ? const Color(0xFF93C5FD) : Colors.grey.shade300,
+        ),
+      ),
+      color: isAuthed ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isAuthed ? Icons.verified_user : Icons.no_accounts_outlined,
+                  color: isAuthed ? const Color(0xFF1D4ED8) : Colors.grey.shade600,
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Status Sesi Supabase Auth',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isAuthed ? const Color(0xFF1E3A8A) : Colors.grey.shade800,
+                        ),
+                      ),
+                      Text(
+                        isAuthed
+                            ? 'Terautentikasi melalui Praktik 1 Worksheet 9'
+                            : 'Belum ada sesi aktif',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isAuthed ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isAuthed ? const Color(0xFFDCFCE7) : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isAuthed ? const Color(0xFF86EFAC) : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Text(
+                    isAuthed ? 'ACTIVE' : 'GUEST',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isAuthed ? const Color(0xFF15803D) : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 20, thickness: 1),
+            Row(
+              children: [
+                const Icon(Icons.email_outlined, size: 16, color: Color(0xFF475569)),
+                const SizedBox(width: 8),
+                const Text(
+                  'Email: ',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF334155),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isAuthed ? FontWeight.bold : FontWeight.normal,
+                      color: isAuthed ? const Color(0xFF1E40AF) : Colors.grey.shade700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            if (isAuthed) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.fingerprint, size: 16, color: Color(0xFF475569)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'User ID: ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      userId,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        color: Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -2,9 +2,90 @@
 // NIM : 2415051014
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
+
+  Widget _buildSupabaseAccountCard() {
+    User? user;
+    try {
+      user = Supabase.instance.client.auth.currentUser;
+    } catch (_) {
+      user = null;
+    }
+    final isAuthed = user != null;
+    final email = user?.email ?? 'Belum terautentikasi';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isAuthed ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isAuthed ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isAuthed ? Icons.verified_user : Icons.account_circle_outlined,
+                color: isAuthed ? const Color(0xFF1D4ED8) : Colors.grey.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Akun Supabase Terdaftar',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isAuthed ? const Color(0xFF1E3A8A) : Colors.grey.shade800,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isAuthed ? const Color(0xFFDCFCE7) : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  isAuthed ? 'TERHUBUNG' : 'GUEST',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isAuthed ? const Color(0xFF15803D) : Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.email_outlined, size: 15, color: Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  email,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isAuthed ? FontWeight.w600 : FontWeight.normal,
+                    color: isAuthed ? const Color(0xFF1E40AF) : Colors.grey.shade600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +106,9 @@ class ProfilePage extends StatelessWidget {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const Text('NIM: 2415051014'),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+            _buildSupabaseAccountCard(),
+            const SizedBox(height: 24),
             const FeedbackForm(),
           ],
         ),

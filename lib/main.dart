@@ -11,6 +11,7 @@ import 'repositories/course_repository.dart';
 import 'screens/courses_page.dart';
 import 'screens/favorites_page.dart';
 import 'screens/home_page.dart';
+import 'screens/login_page.dart';
 import 'screens/profile_page.dart';
 import 'services/course_api_service.dart';
 import 'services/course_service.dart';
@@ -47,7 +48,9 @@ Future<void> main() async {
 // ======================================================
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Widget? home;
+
+  const MyApp({super.key, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -55,19 +58,54 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Course Explorer v2',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1976D2),
-          primary: const Color(0xFF1976D2),
-        ),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1E40AF),
+          primary: const Color(0xFF1E40AF),
+          secondary: const Color(0xFF2563EB),
+          surface: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1976D2),
+          backgroundColor: Color(0xFF1E40AF),
           foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: false,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          elevation: 2,
+          indicatorColor: const Color(0xFFDBEAFE),
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E40AF),
+              );
+            }
+            return const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF64748B),
+            );
+          }),
         ),
       ),
-      home: const ResponsiveShell(),
+      home: home ?? const LoginPage(),
     );
   }
 }
@@ -100,6 +138,9 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         setState(() {
           selectedIndex = index;
         });
+        if (index == 1) {
+          context.read<CourseProvider>().fetchSupabaseCourses();
+        }
       },
       destinations: const [
         NavigationDestination(
@@ -133,6 +174,9 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         setState(() {
           selectedIndex = index;
         });
+        if (index == 1) {
+          context.read<CourseProvider>().fetchSupabaseCourses();
+        }
       },
       labelType: NavigationRailLabelType.all,
       destinations: const [

@@ -84,7 +84,18 @@ class _CoursesPageState extends State<CoursesPage> {
     final courseProvider = context.watch<CourseProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Course Explorer v2')),
+      appBar: AppBar(
+        title: const Text('Course Explorer v2'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Segarkan Course Supabase',
+            onPressed: () {
+              context.read<CourseProvider>().fetchSupabaseCourses();
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // ====================================================
@@ -129,7 +140,7 @@ class _CoursesPageState extends State<CoursesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Courses',
+                          'Courses (Supabase)',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade700,
@@ -193,7 +204,8 @@ class _CoursesPageState extends State<CoursesPage> {
             child: Builder(
               builder: (context) {
                 // 1. Kondisi Loading
-                if (courseProvider.isLoading) {
+                if (courseProvider.isLoading ||
+                    courseProvider.isSupabaseLoading) {
                   return const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -201,7 +213,7 @@ class _CoursesPageState extends State<CoursesPage> {
                         CircularProgressIndicator(),
                         SizedBox(height: 12),
                         Text(
-                          'Memuat courses...',
+                          'Memuat courses dari Supabase...',
                           style: TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -210,7 +222,10 @@ class _CoursesPageState extends State<CoursesPage> {
                 }
 
                 // 2. Kondisi Error
-                if (courseProvider.error != null) {
+                if (courseProvider.error != null ||
+                    courseProvider.supabaseError != null) {
+                  final errorMsg =
+                      courseProvider.supabaseError ?? courseProvider.error;
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
@@ -224,7 +239,7 @@ class _CoursesPageState extends State<CoursesPage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Gagal memuat courses: ${courseProvider.error}',
+                            'Gagal memuat courses: $errorMsg',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.red,
@@ -234,7 +249,9 @@ class _CoursesPageState extends State<CoursesPage> {
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: () {
-                              context.read<CourseProvider>().loadCourses();
+                              context
+                                  .read<CourseProvider>()
+                                  .fetchSupabaseCourses();
                             },
                             icon: const Icon(Icons.refresh),
                             label: const Text('Coba Lagi'),
@@ -245,32 +262,96 @@ class _CoursesPageState extends State<CoursesPage> {
                   );
                 }
 
-                // 3. Kondisi Success
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columns = getColumns(constraints.maxWidth);
+                // 3. Kondisi Kosong (Empty State)
+                if (courseProvider.courses.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: () =>
+                        context.read<CourseProvider>().fetchSupabaseCourses(),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.45,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.menu_book_outlined,
+                                    size: 56,
+                                    color: Colors.blue.shade200,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const Text(
+                                    'Belum Ada Course di Supabase',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Tambahkan course baru melalui menu Home untuk melihat daftar di sini.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      context
+                                          .read<CourseProvider>()
+                                          .fetchSupabaseCourses();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Segarkan'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: courseProvider.courses.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: getAspectRatio(columns),
-                      ),
-                      itemBuilder: (context, index) {
-                        final course = courseProvider.courses[index];
+                // 4. Kondisi Success
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      context.read<CourseProvider>().fetchSupabaseCourses(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = getColumns(constraints.maxWidth);
 
-                        return CourseCard(
-                          course: course,
-                          onOpenDetail: () {
-                            openDetail(course);
-                          },
-                        );
-                      },
-                    );
-                  },
+                      return GridView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: courseProvider.courses.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: getAspectRatio(columns),
+                        ),
+                        itemBuilder: (context, index) {
+                          final course = courseProvider.courses[index];
+
+                          return CourseCard(
+                            course: course,
+                            onOpenDetail: () {
+                              openDetail(course);
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 );
               },
             ),
