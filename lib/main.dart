@@ -27,7 +27,7 @@ import 'services/notification_service.dart';
 // ======================================================
 
 Future<void> initializeFCM() async {
-  // Praktik 9: Pengelolaan registrasi dan FCM token melalui NotificationService
+  // Praktik 9 & 10: Pengelolaan registrasi dan FCM token melalui NotificationService
   try {
     final notifService = NotificationService.instance;
 
@@ -41,19 +41,6 @@ Future<void> initializeFCM() async {
   } catch (e) {
     debugPrint('Peringatan: Gagal menginisialisasi registrasi FCM: $e');
   }
-
-  // Mendengarkan notifikasi ketika aplikasi sedang terbuka
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('Notifikasi FCM diterima!');
-    debugPrint('Judul: ${message.notification?.title}');
-    debugPrint('Isi: ${message.notification?.body}');
-  });
-
-  // Mendengarkan ketika pengguna membuka notifikasi
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    debugPrint('Pengguna membuka notifikasi FCM.');
-    debugPrint('Judul: ${message.notification?.title}');
-  });
 }
 
 // ======================================================
@@ -67,6 +54,9 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   debugPrint('Firebase berhasil diinisialisasi.');
+
+  // Praktik 10: Mendaftarkan background messaging handler setelah Firebase.initializeApp() dan sebelum runApp()
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Inisialisasi Supabase
   await Supabase.initialize(
@@ -126,6 +116,7 @@ class MyApp extends StatelessWidget {
             : LoginPage(authService: auth));
 
     return MaterialApp(
+      scaffoldMessengerKey: NotificationService.scaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       title: 'Course Explorer v2',
       theme: ThemeData(

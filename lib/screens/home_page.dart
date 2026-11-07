@@ -38,8 +38,8 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    // Praktik 8: Meminta izin (permission) notifikasi melalui NotificationService
-    NotificationService.instance.requestPermission();
+    // Praktik 10: Inisialisasi penerimaan notifikasi FCM (Foreground, Background, Terminated)
+    NotificationService.instance.init();
 
     final pService = widget.profileService ?? ProfileService.instance;
 
