@@ -29,6 +29,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -36,6 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   late final AuthService _authService;
 
+  String _selectedRole = 'student';
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -50,6 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -59,6 +62,13 @@ class _RegisterPageState extends State<RegisterPage> {
   // ===========================================================================
   // VALIDASI FORM
   // ===========================================================================
+  String? _validateName(String? value) {
+    if (value != null && value.trim().isNotEmpty && value.trim().length < 2) {
+      return 'Nama minimal 2 karakter';
+    }
+    return null;
+  }
+
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Email wajib diisi';
@@ -109,11 +119,19 @@ class _RegisterPageState extends State<RegisterPage> {
       _successMessage = null;
     });
 
+    final rawName = _nameController.text.trim();
     final email = _emailController.text.trim();
+    final name = rawName.isNotEmpty ? rawName : email.split('@').first;
     final password = _passwordController.text;
+    final role = _selectedRole;
 
     try {
-      final response = await _authService.register(email, password);
+      final response = await _authService.register(
+        email,
+        password,
+        name: name,
+        role: role,
+      );
 
       if (!mounted) return;
 
@@ -450,10 +468,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           hintText: 'Ulangi password di atas',
                           prefixIcon: Icons.lock_reset_rounded,
                           obscureText: !_isConfirmPasswordVisible,
-                          textInputAction: TextInputAction.done,
+                          textInputAction: TextInputAction.next,
                           enabled: !_isLoading,
                           validator: _validateConfirmPassword,
-                          onFieldSubmitted: (_) => _handleRegister(),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isConfirmPasswordVisible
@@ -469,6 +486,63 @@ class _RegisterPageState extends State<RegisterPage> {
                               });
                             },
                           ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Input Nama Lengkap
+                        CustomTextField(
+                          controller: _nameController,
+                          labelText: 'Nama Lengkap',
+                          hintText: 'Contoh: Gede Supadma',
+                          prefixIcon: Icons.badge_outlined,
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.done,
+                          enabled: !_isLoading,
+                          validator: _validateName,
+                          onFieldSubmitted: (_) => _handleRegister(),
+                        ),
+                        // Pilihan Peran Akun (Role: Student vs Instructor)
+                        const SizedBox(height: 18),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Pilih Peran Akun',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _RoleCard(
+                                key: const Key('role_student'),
+                                title: 'Student',
+                                subtitle: 'Mahasiswa / Siswa',
+                                icon: Icons.school_outlined,
+                                isSelected: _selectedRole == 'student',
+                                onTap: !_isLoading
+                                    ? () => setState(() => _selectedRole = 'student')
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _RoleCard(
+                                key: const Key('role_instructor'),
+                                title: 'Instructor',
+                                subtitle: 'Pengajar / Dosen',
+                                icon: Icons.cast_for_education_outlined,
+                                isSelected: _selectedRole == 'instructor',
+                                onTap: !_isLoading
+                                    ? () => setState(() => _selectedRole = 'instructor')
+                                    : null,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
 
@@ -515,6 +589,90 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// PRAKTIK 3: KARTU PILIHAN PERAN (ROLE CARD)
+// =============================================================================
+class _RoleCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const _RoleCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.isSelected,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected
+                      ? const Color(0xFF1D4ED8)
+                      : const Color(0xFF64748B),
+                ),
+                const Spacer(),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: Color(0xFF2563EB),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: isSelected
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF64748B),
+              ),
+            ),
+          ],
         ),
       ),
     );

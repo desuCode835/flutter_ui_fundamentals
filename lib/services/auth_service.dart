@@ -59,13 +59,31 @@ class AuthService {
   /// Stream perubahan status autentikasi (SIGNED_IN, SIGNED_OUT, dll.)
   Stream<AuthState> get onAuthStateChange => client.auth.onAuthStateChange;
 
-  /// Mendaftarkan pengguna baru dengan email dan password ke Supabase Auth
-  Future<AuthResponse> register(String email, String password) async {
-    debugPrint('[AuthService] Melakukan registrasi untuk email: $email');
+  /// Mendaftarkan pengguna baru dengan email, password, name, dan role ke Supabase Auth.
+  /// Mengirimkan metadata 'name' dan 'role' dalam payload `data` agar dibaca
+  /// oleh fungsi trigger database `handle_new_user()` pada tabel `public.profiles`.
+  Future<AuthResponse> register(
+    String email,
+    String password, {
+    String? name,
+    String role = 'student',
+  }) async {
+    final sanitizedRole = role.trim().toLowerCase();
+    final metadata = <String, dynamic>{
+      'role': sanitizedRole.isNotEmpty ? sanitizedRole : 'student',
+    };
+    if (name != null && name.trim().isNotEmpty) {
+      metadata['name'] = name.trim();
+    }
+
+    debugPrint(
+      '[AuthService] Melakukan registrasi untuk email: $email, role: ${metadata['role']}, name: ${metadata['name']}',
+    );
     try {
       final response = await client.auth.signUp(
         email: email.trim(),
         password: password,
+        data: metadata,
       );
       debugPrint(
         '[AuthService] Registrasi berhasil diproses. User ID: ${response.user?.id}, Session: ${response.session != null ? "Tersedia" : "Menunggu konfirmasi email"}',

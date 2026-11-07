@@ -2214,6 +2214,9 @@ class SupabaseUserCard extends StatelessWidget {
     final email = user?.email ?? 'Belum login (Mode Tamu)';
     final userId = user?.id ?? '-';
     final isAuthed = user != null;
+    final meta = user?.userMetadata;
+    final role = (meta?['role'] as String? ?? 'student').toLowerCase();
+    final name = meta?['name'] as String?;
 
     return Card(
       elevation: 0,
@@ -2307,6 +2310,63 @@ class SupabaseUserCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (isAuthed && name != null && name.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF475569)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Nama: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E40AF),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (isAuthed) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF475569)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Role: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                  Text(
+                    role.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: role == 'instructor'
+                          ? const Color(0xFF7C3AED)
+                          : role == 'admin'
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF0284C7),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (isAuthed) ...[
               const SizedBox(height: 6),
               Row(

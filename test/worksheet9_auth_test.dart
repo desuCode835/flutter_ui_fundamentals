@@ -54,16 +54,29 @@ class FakeAuthService extends AuthService {
     );
   }
 
+  String? lastRegisteredName;
+  String? lastRegisteredRole;
+
   @override
-  Future<AuthResponse> register(String email, String password) async {
+  Future<AuthResponse> register(
+    String email,
+    String password, {
+    String? name,
+    String role = 'student',
+  }) async {
     registerCallCount++;
+    lastRegisteredName = name;
+    lastRegisteredRole = role;
     if (shouldFail) {
       throw AuthException(failMessage ?? 'User already registered');
     }
     final user = User(
       id: 'user-new-456',
       appMetadata: {},
-      userMetadata: {},
+      userMetadata: {
+        'name': name ?? '',
+        'role': role,
+      },
       aud: 'authenticated',
       createdAt: DateTime.now().toIso8601String(),
       email: email,

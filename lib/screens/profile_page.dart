@@ -2,128 +2,458 @@
 // NIM : 2415051014
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/user_profile.dart';
 import '../services/auth_service.dart';
+import '../services/profile_service.dart';
 import 'login_page.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+// =============================================================================
+// WORKSHEET 9 - PRAKTIK 3: PROFILE PAGE DENGAN INFORMASI USER & ROLE
+// =============================================================================
+// Menampilkan profil pengguna terautentikasi (Nama, Email, Role) dari database
+// Supabase (tabel public.profiles) dengan penanganan loading, error, dan not found.
+class ProfilePage extends StatefulWidget {
+  final ProfileService? profileService;
+  final AuthService? authService;
+
+  const ProfilePage({super.key, this.profileService, this.authService});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  late final ProfileService _profileService;
+  late final AuthService _authService;
+
+  UserProfile? _profile;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileService = widget.profileService ?? ProfileService.instance;
+    _authService = widget.authService ?? AuthService.instance;
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = _authService.currentUser;
+    if (user == null) {
+      if (mounted) {
+        setState(() {
+          _profile = null;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final profile = await _profileService.getCurrentProfile();
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'instructor':
+        return const Color(0xFF7C3AED); // Violet / Purple
+      case 'admin':
+        return const Color(0xFFDC2626); // Red
+      case 'student':
+      default:
+        return const Color(0xFF0284C7); // Sky Blue
+    }
+  }
+
+  Color _getRoleBackgroundColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'instructor':
+        return const Color(0xFFF5F3FF);
+      case 'admin':
+        return const Color(0xFFFEF2F2);
+      case 'student':
+      default:
+        return const Color(0xFFF0F9FF);
+    }
+  }
+
+  Widget _buildRoleBadge(String role) {
+    final color = _getRoleColor(role);
+    final bgColor = _getRoleBackgroundColor(role);
+
+    IconData icon;
+    switch (role.toLowerCase()) {
+      case 'instructor':
+        icon = Icons.cast_for_education_rounded;
+        break;
+      case 'admin':
+        icon = Icons.admin_panel_settings_rounded;
+        break;
+      case 'student':
+      default:
+        icon = Icons.school_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(90)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
+          Text(
+            role.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSupabaseAccountCard(BuildContext context) {
-    User? user;
-    try {
-      user = AuthService.instance.currentUser;
-    } catch (_) {
-      user = null;
-    }
+    final user = _authService.currentUser;
     final isAuthed = user != null;
-    final email = user?.email ?? 'Belum terautentikasi';
+
+    if (!isAuthed) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.no_accounts_outlined, color: Colors.grey.shade600, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'Mode Tamu (Belum Login)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'GUEST',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(Icons.login, size: 16),
+                label: const Text('Masuk ke Akun'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E40AF),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 1. Kondisi Loading
+    if (_isLoading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFBFDBFE)),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 12),
+              Text(
+                'Memuat profil pengguna dari Supabase...',
+                style: TextStyle(fontSize: 13, color: Color(0xFF2563EB)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 2. Kondisi Error
+    if (_errorMessage != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 22),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Gagal Memuat Profil Pengguna',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF991B1B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _loadProfile,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Coba Lagi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () => AuthService.logoutDialog(context, authService: _authService),
+                  icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
+                  label: const Text('Logout'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFDC2626),
+                    side: const BorderSide(color: Color(0xFFFCA5A5)),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Ambil data profile atau fallback dari metadata user
+    final profile = _profile;
+    final meta = user.userMetadata;
+    final displayName = profile?.name.isNotEmpty == true
+        ? profile!.name
+        : (meta?['name'] as String? ?? 'Nama belum diatur');
+    final displayEmail = profile?.email.isNotEmpty == true
+        ? profile!.email
+        : (user.email ?? 'Email belum diatur');
+    final displayRole = profile?.role.isNotEmpty == true
+        ? profile!.role
+        : (meta?['role'] as String? ?? 'student');
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isAuthed ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+        color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isAuthed ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0),
-        ),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                isAuthed ? Icons.verified_user : Icons.account_circle_outlined,
-                color: isAuthed ? const Color(0xFF1D4ED8) : Colors.grey.shade600,
-                size: 20,
+              const Icon(
+                Icons.verified_user_rounded,
+                color: Color(0xFF1D4ED8),
+                size: 22,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Akun Supabase Terdaftar',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isAuthed ? const Color(0xFF1E3A8A) : Colors.grey.shade800,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isAuthed ? const Color(0xFFDCFCE7) : Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+              const Expanded(
                 child: Text(
-                  isAuthed ? 'TERHUBUNG' : 'GUEST',
+                  'Profil Akun Supabase',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: isAuthed ? const Color(0xFF15803D) : Colors.grey.shade700,
+                    color: Color(0xFF1E3A8A),
                   ),
                 ),
               ),
+              _buildRoleBadge(displayRole),
             ],
           ),
-          const SizedBox(height: 8),
+          const Divider(height: 22, thickness: 1, color: Color(0xFFDBEAFE)),
+
+          // 1. Informasi Nama
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.email_outlined, size: 15, color: Color(0xFF64748B)),
-              const SizedBox(width: 6),
+              const Icon(Icons.badge_outlined, size: 17, color: Color(0xFF2563EB)),
+              const SizedBox(width: 8),
+              const Text(
+                'Nama: ',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
+              ),
               Expanded(
                 child: Text(
-                  email,
-                  style: TextStyle(
+                  displayName,
+                  style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: isAuthed ? FontWeight.w600 : FontWeight.normal,
-                    color: isAuthed ? const Color(0xFF1E40AF) : Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E40AF),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
+
+          // 2. Informasi Email
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.email_outlined, size: 17, color: Color(0xFF2563EB)),
+              const SizedBox(width: 8),
+              const Text(
+                'Email: ',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  displayEmail,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1E40AF),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 3. Informasi Role
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.shield_outlined, size: 17, color: Color(0xFF2563EB)),
+              const SizedBox(width: 8),
+              const Text(
+                'Role: ',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              Text(
+                displayRole.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: _getRoleColor(displayRole),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Tombol Logout
           SizedBox(
             width: double.infinity,
-            child: isAuthed
-                ? OutlinedButton.icon(
-                    onPressed: () => AuthService.logoutDialog(context),
-                    icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
-                    label: const Text(
-                      'Keluar dari Akun (Logout)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFDC2626),
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFCA5A5)),
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                        (route) => false,
-                      );
-                    },
-                    icon: const Icon(Icons.login, size: 16),
-                    label: const Text('Masuk ke Akun'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E40AF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
+            child: OutlinedButton.icon(
+              onPressed: () => AuthService.logoutDialog(context, authService: _authService),
+              icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
+              label: const Text(
+                'Keluar dari Akun (Logout)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -132,14 +462,28 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = _authService.currentUser;
+    final profile = _profile;
+    final meta = user?.userMetadata;
+    final headerName = profile?.name.isNotEmpty == true
+        ? profile!.name
+        : (meta?['name'] as String? ?? 'Gede Supadma');
+    final headerRole = profile?.roleDisplay ??
+        ((meta?['role'] as String?)?.toUpperCase() ?? 'STUDENT');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Segarkan Profil',
+            onPressed: _loadProfile,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
-            onPressed: () => AuthService.logoutDialog(context),
+            onPressed: () => AuthService.logoutDialog(context, authService: _authService),
           ),
         ],
       ),
@@ -153,11 +497,11 @@ class ProfilePage extends StatelessWidget {
               backgroundImage: AssetImage('assets/images/profile.jpg'),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Gede Supadma',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Text(
+              headerName,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const Text('NIM: 2415051014'),
+            Text('NIM: 2415051014 • Peran: $headerRole'),
             const SizedBox(height: 20),
             _buildSupabaseAccountCard(context),
             const SizedBox(height: 24),
