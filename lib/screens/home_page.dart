@@ -9,6 +9,7 @@ import '../models/course.dart';
 import '../models/user_profile.dart';
 import '../providers/course_provider.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/profile_service.dart';
 import '../widgets/role_guard.dart';
 import 'course_detail_page.dart';
@@ -36,6 +37,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    // Praktik 8: Meminta izin (permission) notifikasi melalui NotificationService
+    NotificationService.instance.requestPermission();
+
     final pService = widget.profileService ?? ProfileService.instance;
 
     if (widget.userRole != null) {

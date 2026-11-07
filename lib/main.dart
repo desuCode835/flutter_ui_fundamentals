@@ -26,19 +26,10 @@ import 'services/course_supabase_service.dart';
 // ======================================================
 
 Future<void> initializeFCM() async {
-  // Meminta izin notifikasi kepada pengguna
-  final NotificationSettings settings = await FirebaseMessaging.instance
-      .requestPermission(alert: true, badge: true, sound: true);
-
-  debugPrint('Status izin notifikasi: ${settings.authorizationStatus}');
-
   // Mendengarkan FCM registration token
   FirebaseMessaging.instance.onRegistered.listen((token) {
     debugPrint('FCM TOKEN: $token');
   });
-
-  // Mendaftarkan perangkat ke Firebase Cloud Messaging
-  await FirebaseMessaging.instance.register();
 
   // Mendengarkan notifikasi ketika aplikasi sedang terbuka
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -52,6 +43,14 @@ Future<void> initializeFCM() async {
     debugPrint('Pengguna membuka notifikasi FCM.');
     debugPrint('Judul: ${message.notification?.title}');
   });
+
+  // Mendaftarkan perangkat ke Firebase Cloud Messaging
+  try {
+    await FirebaseMessaging.instance.register();
+    debugPrint('Registrasi FCM berhasil.');
+  } catch (e) {
+    debugPrint('Registrasi FCM gagal: $e');
+  }
 }
 
 // ======================================================
@@ -65,9 +64,6 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   debugPrint('Firebase berhasil diinisialisasi.');
-
-  // Inisialisasi Firebase Cloud Messaging
-  await initializeFCM();
 
   // Inisialisasi Supabase
   await Supabase.initialize(
@@ -84,6 +80,7 @@ Future<void> main() async {
 
   final repository = CourseRepository(service, apiService, supabaseService);
 
+  // Menjalankan aplikasi
   runApp(
     ChangeNotifierProvider(
       create: (_) {
@@ -96,6 +93,9 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
+
+  // Inisialisasi FCM setelah aplikasi dijalankan
+  initializeFCM();
 }
 
 // ======================================================
@@ -113,6 +113,7 @@ class MyApp extends StatelessWidget {
     // PRAKTIK 2: Pengecekan current session ketika aplikasi pertama kali dibuka.
     // Jika user memiliki session aktif dan valid di Supabase Auth -> langsung tampilkan ResponsiveShell (HomePage).
     // Jika tidak ada session -> tampilkan LoginPage.
+
     final auth = authService ?? AuthService.instance;
 
     final Widget initialHome =
