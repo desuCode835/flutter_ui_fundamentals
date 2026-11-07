@@ -20,16 +20,27 @@ import 'services/auth_service.dart';
 import 'services/course_api_service.dart';
 import 'services/course_service.dart';
 import 'services/course_supabase_service.dart';
+import 'services/notification_service.dart';
 
 // ======================================================
 // FIREBASE CLOUD MESSAGING
 // ======================================================
 
 Future<void> initializeFCM() async {
-  // Mendengarkan FCM registration token
-  FirebaseMessaging.instance.onRegistered.listen((token) {
-    debugPrint('FCM TOKEN: $token');
-  });
+  // Praktik 9: Pengelolaan registrasi dan FCM token melalui NotificationService
+  try {
+    final notifService = NotificationService.instance;
+
+    // Mendengarkan pembaruan atau perubahan FCM registration token
+    notifService.listenTokenRefresh((token) {
+      debugPrint('FCM Token aktif: $token');
+    });
+
+    // Mendaftarkan perangkat dan mendapatkan FCM registration token
+    await notifService.getToken();
+  } catch (e) {
+    debugPrint('Peringatan: Gagal menginisialisasi registrasi FCM: $e');
+  }
 
   // Mendengarkan notifikasi ketika aplikasi sedang terbuka
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -43,14 +54,6 @@ Future<void> initializeFCM() async {
     debugPrint('Pengguna membuka notifikasi FCM.');
     debugPrint('Judul: ${message.notification?.title}');
   });
-
-  // Mendaftarkan perangkat ke Firebase Cloud Messaging
-  try {
-    await FirebaseMessaging.instance.register();
-    debugPrint('Registrasi FCM berhasil.');
-  } catch (e) {
-    debugPrint('Registrasi FCM gagal: $e');
-  }
 }
 
 // ======================================================
