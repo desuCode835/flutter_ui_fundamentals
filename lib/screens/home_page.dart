@@ -7,7 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/course.dart';
 import '../providers/course_provider.dart';
+import '../services/auth_service.dart';
 import 'course_detail_page.dart';
+import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -203,7 +205,16 @@ class HomePage extends StatelessWidget {
     final courseProvider = context.watch<CourseProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Course Explorer v2')),
+      appBar: AppBar(
+        title: const Text('Course Explorer v2'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout dari Akun',
+            onPressed: () => AuthService.logoutDialog(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -2196,7 +2207,7 @@ class SupabaseUserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     User? user;
     try {
-      user = Supabase.instance.client.auth.currentUser;
+      user = AuthService.instance.currentUser;
     } catch (_) {
       user = null;
     }
@@ -2324,6 +2335,46 @@ class SupabaseUserCard extends StatelessWidget {
                 ],
               ),
             ],
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: isAuthed
+                  ? OutlinedButton.icon(
+                      onPressed: () => AuthService.logoutDialog(context),
+                      icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
+                      label: const Text(
+                        'Logout dari Akun Supabase',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.login, size: 16),
+                      label: const Text('Masuk ke Akun'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E40AF),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+            ),
           ],
         ),
       ),

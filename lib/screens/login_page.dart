@@ -121,12 +121,13 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      // Navigasi ke halaman utama Course Explorer (ResponsiveShell)
-      Navigator.pushReplacement(
+      // Navigasi ke halaman utama Course Explorer (ResponsiveShell) dan bersihkan stack autentikasi
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (context) => const ResponsiveShell(),
         ),
+        (route) => false,
       );
     } on AuthException catch (e) {
       if (!mounted) return;

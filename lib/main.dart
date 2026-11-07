@@ -13,6 +13,7 @@ import 'screens/favorites_page.dart';
 import 'screens/home_page.dart';
 import 'screens/login_page.dart';
 import 'screens/profile_page.dart';
+import 'services/auth_service.dart';
 import 'services/course_api_service.dart';
 import 'services/course_service.dart';
 import 'services/course_supabase_service.dart';
@@ -49,11 +50,21 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   final Widget? home;
+  final AuthService? authService;
 
-  const MyApp({super.key, this.home});
+  const MyApp({super.key, this.home, this.authService});
 
   @override
   Widget build(BuildContext context) {
+    // PRAKTIK 2: Pengecekan current session ketika aplikasi pertama kali dibuka.
+    // Jika user memiliki session aktif dan valid di Supabase Auth -> langsung tampilkan ResponsiveShell (HomePage)
+    // Jika tidak ada session -> tampilkan LoginPage.
+    final auth = authService ?? AuthService.instance;
+    final Widget initialHome = home ??
+        (auth.isLoggedIn
+            ? const ResponsiveShell()
+            : LoginPage(authService: auth));
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Course Explorer v2',
@@ -105,7 +116,7 @@ class MyApp extends StatelessWidget {
           }),
         ),
       ),
-      home: home ?? const LoginPage(),
+      home: initialHome,
     );
   }
 }
