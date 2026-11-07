@@ -6,13 +6,100 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/course.dart';
+import '../models/user_profile.dart';
 import '../providers/course_provider.dart';
 import '../services/auth_service.dart';
+import '../services/profile_service.dart';
+import '../widgets/role_guard.dart';
 import 'course_detail_page.dart';
 import 'login_page.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  final ProfileService? profileService;
+  final AuthService? authService;
+  final String? userRole;
+
+  const HomePage({
+    super.key,
+    this.profileService,
+    this.authService,
+    this.userRole,
+  });
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true;
+  String? _profileError;
+  String? _currentRole;
+
+  @override
+  void initState() {
+    super.initState();
+    final pService = widget.profileService ?? ProfileService.instance;
+    final aService = widget.authService ?? AuthService.instance;
+
+    if (widget.userRole != null) {
+      _currentRole = widget.userRole;
+      _isLoadingProfile = false;
+      final u = aService.currentUser;
+      _userProfile = UserProfile(
+        id: u?.id ?? 'override',
+        email: u?.email ?? '',
+        name: u?.userMetadata?['name'] as String? ?? 'User',
+        role: widget.userRole!,
+      );
+    } else {
+      final cached = pService.cachedProfile;
+      if (cached != null) {
+        _userProfile = cached;
+        _currentRole = cached.role;
+        _isLoadingProfile = false;
+      } else {
+        _currentRole = null;
+        _isLoadingProfile = true;
+      }
+      _loadProfile();
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    if (widget.userRole != null) return;
+    final aService = widget.authService ?? AuthService.instance;
+    final user = aService.currentUser;
+    if (user == null) {
+      if (mounted) {
+        setState(() {
+          _userProfile = null;
+          _currentRole = null;
+          _isLoadingProfile = false;
+          _profileError = null;
+        });
+      }
+      return;
+    }
+
+    try {
+      final pService = widget.profileService ?? ProfileService.instance;
+      final profile = await pService.getCurrentProfile();
+      if (!mounted) return;
+      setState(() {
+        _userProfile = profile;
+        _currentRole = profile?.role;
+        _isLoadingProfile = false;
+        _profileError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _profileError = e.toString().replaceAll('Exception: ', '').trim();
+        _isLoadingProfile = false;
+      });
+    }
+  }
 
   // ===========================================================================
   // TAHAP 8: DIALOG KONFIRMASI DAN PROSES HTTP DELETE
@@ -200,9 +287,72 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  Widget _buildProfileCard() {
+    if (_isLoadingProfile) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_profileError != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red),
+              const SizedBox(height: 8),
+              Text(_profileError!),
+              TextButton(
+                onPressed: _loadProfile,
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final profile = _userProfile;
+
+    if (profile == null) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Profil pengguna belum tersedia.'),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Informasi Akun',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text('Nama: ${profile.name}'),
+            Text('Email: ${profile.email}'),
+            Text('Role: ${profile.role.toUpperCase()}'),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
+    final effectiveRole = _currentRole;
+    final currentUser =
+        (widget.authService ?? AuthService.instance).currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -278,9 +428,18 @@ class HomePage extends StatelessWidget {
 
             // ====================================================
             // TAHAP 6: FORM TAMBAH COURSE BARU (HTTP POST)
+            // PRAKTIK 4: ROLE GUARD (INSTRUCTOR & ADMIN)
             // ====================================================
-            const CoursePostForm(),
-            const SizedBox(height: 20),
+            RoleGuard(
+              userRole: effectiveRole,
+              allowedRoles: const ['instructor', 'admin'],
+              child: Column(
+                children: [
+                  CoursePostForm(userRole: effectiveRole),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
 
             // ====================================================
             // TAHAP 5: STATE UI (LOADING, SUCCESS, EMPTY, ERROR)
@@ -686,72 +845,97 @@ class HomePage extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 8),
                                     // Tombol Aksi: Edit (Tahap 7) & Delete (Tahap 8)
+                                    // PRAKTIK 4: ROLE GUARD (INSTRUCTOR [OWNER], ADMIN)
                                     Wrap(
                                       spacing: 4,
                                       runSpacing: 4,
                                       children: [
                                         // 1. Tombol Edit pada setiap item course di daftar (Tahap 7)
-                                        OutlinedButton.icon(
-                                          onPressed: () {
-                                            // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
-                                            showDialog(
-                                              context: context,
-                                              builder: (dialogCtx) =>
-                                                  CourseEditDialog(
-                                                    course: item,
+                                        RoleGuard(
+                                          userRole: effectiveRole,
+                                          allowedRoles: const [
+                                            'instructor',
+                                            'admin',
+                                          ],
+                                          isOwner: isCourseOwner(
+                                            item,
+                                            user: currentUser,
+                                          ),
+                                          child: OutlinedButton.icon(
+                                            onPressed: () {
+                                              // 2. Saat tombol Edit ditekan, tampilkan form yang sudah terisi data course sebelumnya
+                                              showDialog(
+                                                context: context,
+                                                builder: (dialogCtx) =>
+                                                    CourseEditDialog(
+                                                      course: item,
+                                                    ),
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.edit,
+                                              size: 13,
+                                            ),
+                                            label: const Text(
+                                              'Edit',
+                                              style: TextStyle(fontSize: 11),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: const Color(
+                                                0xFF1565C0,
+                                              ),
+                                              side: BorderSide(
+                                                color: Colors.blue.shade300,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
                                                   ),
-                                            );
-                                          },
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            size: 13,
-                                          ),
-                                          label: const Text(
-                                            'Edit',
-                                            style: TextStyle(fontSize: 11),
-                                          ),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: const Color(
-                                              0xFF1565C0,
+                                              visualDensity:
+                                                  VisualDensity.compact,
                                             ),
-                                            side: BorderSide(
-                                              color: Colors.blue.shade300,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            visualDensity:
-                                                VisualDensity.compact,
                                           ),
                                         ),
                                         // 3. Tombol Delete pada setiap item course (Tahap 8)
-                                        OutlinedButton.icon(
-                                          onPressed: () =>
-                                              _showDeleteConfirmation(
-                                                context,
-                                                item,
+                                        RoleGuard(
+                                          userRole: effectiveRole,
+                                          allowedRoles: const [
+                                            'instructor',
+                                            'admin',
+                                          ],
+                                          isOwner: isCourseOwner(
+                                            item,
+                                            user: currentUser,
+                                          ),
+                                          child: OutlinedButton.icon(
+                                            onPressed: () =>
+                                                _showDeleteConfirmation(
+                                                  context,
+                                                  item,
+                                                ),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              size: 13,
+                                            ),
+                                            label: const Text(
+                                              'Hapus',
+                                              style: TextStyle(fontSize: 11),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor:
+                                                  Colors.red.shade700,
+                                              side: BorderSide(
+                                                color: Colors.red.shade300,
                                               ),
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                            size: 13,
-                                          ),
-                                          label: const Text(
-                                            'Hapus',
-                                            style: TextStyle(fontSize: 11),
-                                          ),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor:
-                                                Colors.red.shade700,
-                                            side: BorderSide(
-                                              color: Colors.red.shade300,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              visualDensity:
+                                                  VisualDensity.compact,
                                             ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            visualDensity:
-                                                VisualDensity.compact,
                                           ),
                                         ),
                                       ],
@@ -814,7 +998,11 @@ class HomePage extends StatelessWidget {
             // TAHAP 12: DATABASE SUPABASE (SELECT — MEMBACA DATA)
             // ====================================================
             const SizedBox(height: 20),
-            const SupabaseCourseSection(),
+            SupabaseCourseSection(
+              userRole: effectiveRole,
+              profileService: widget.profileService,
+              authService: widget.authService,
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
@@ -840,7 +1028,9 @@ class HomePage extends StatelessWidget {
 // Nama : Gede Supadma
 // NIM  : 2415051014
 class CoursePostForm extends StatefulWidget {
-  const CoursePostForm({super.key});
+  final String? userRole;
+
+  const CoursePostForm({super.key, this.userRole});
 
   @override
   State<CoursePostForm> createState() => _CoursePostFormState();
@@ -989,6 +1179,8 @@ class _CoursePostFormState extends State<CoursePostForm> {
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
+    final effectiveRole =
+        widget.userRole ?? ProfileService.instance.currentUserRoleSync;
     final isCreating = courseProvider.isCreatingCourse;
     final isCreatingSupabase = courseProvider.isCreatingSupabaseCourse;
 
@@ -1148,88 +1340,92 @@ class _CoursePostFormState extends State<CoursePostForm> {
               ),
               const SizedBox(height: 16),
 
-              // Action buttons
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
-                children: [
-                  // Tombol baru: Simpan ke Supabase (Tahap 13)
-                  ElevatedButton.icon(
-                    onPressed: (isCreating || isCreatingSupabase)
-                        ? null
-                        : () => _submitSupabase(),
-                    icon: isCreatingSupabase
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.cloud_upload),
-                    label: Text(
-                      isCreatingSupabase
-                          ? 'Menyimpan...'
-                          : 'Simpan ke Supabase',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00796B),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
+              // Action buttons (RoleGuard: instructor & admin)
+              RoleGuard(
+                userRole: effectiveRole,
+                allowedRoles: const ['instructor', 'admin'],
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    // Tombol baru: Simpan ke Supabase (Tahap 13)
+                    ElevatedButton.icon(
+                      onPressed: (isCreating || isCreatingSupabase)
+                          ? null
+                          : () => _submitSupabase(),
+                      icon: isCreatingSupabase
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.cloud_upload),
+                      label: Text(
+                        isCreatingSupabase
+                            ? 'Menyimpan...'
+                            : 'Simpan ke Supabase',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00796B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Tombol lama: Simpan (HTTP POST) (Tahap 6)
-                  ElevatedButton.icon(
-                    onPressed: (isCreating || isCreatingSupabase)
-                        ? null
-                        : () => _submit(),
-                    icon: isCreating
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.send),
-                    label: Text(
-                      isCreating ? 'Mengirim POST...' : 'Simpan (HTTP POST)',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1976D2),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
+                    // Tombol lama: Simpan (HTTP POST) (Tahap 6)
+                    ElevatedButton.icon(
+                      onPressed: (isCreating || isCreatingSupabase)
+                          ? null
+                          : () => _submit(),
+                      icon: isCreating
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send),
+                      label: Text(
+                        isCreating ? 'Mengirim POST...' : 'Simpan (HTTP POST)',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1976D2),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Tombol lama: Uji Error POST (Tahap 6)
-                  OutlinedButton.icon(
-                    onPressed: (isCreating || isCreatingSupabase)
-                        ? null
-                        : () => _submit(simulateError: true),
-                    icon: const Icon(Icons.error_outline),
-                    label: const Text('Uji Error POST'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade700,
-                      side: BorderSide(color: Colors.red.shade300),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
+                    // Tombol lama: Uji Error POST (Tahap 6)
+                    OutlinedButton.icon(
+                      onPressed: (isCreating || isCreatingSupabase)
+                          ? null
+                          : () => _submit(simulateError: true),
+                      icon: const Icon(Icons.error_outline),
+                      label: const Text('Uji Error POST'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade700,
+                        side: BorderSide(color: Colors.red.shade300),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -1564,7 +1760,16 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
 // Nama : Gede Supadma
 // NIM  : 2415051014
 class SupabaseCourseSection extends StatelessWidget {
-  const SupabaseCourseSection({super.key});
+  final String? userRole;
+  final ProfileService? profileService;
+  final AuthService? authService;
+
+  const SupabaseCourseSection({
+    super.key,
+    this.userRole,
+    this.profileService,
+    this.authService,
+  });
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -1758,6 +1963,10 @@ class SupabaseCourseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
+    final effectiveRole =
+        userRole ??
+        (profileService ?? ProfileService.instance).currentUserRoleSync;
+    final currentUser = (authService ?? AuthService.instance).currentUser;
 
     return Card(
       elevation: 0,
@@ -2125,35 +2334,57 @@ class SupabaseCourseSection extends StatelessWidget {
                             Wrap(
                               spacing: 2,
                               children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit_note,
-                                    color: Color(0xFF00796B),
-                                    size: 24,
+                                RoleGuard(
+                                  userRole: effectiveRole,
+                                  allowedRoles: const ['instructor', 'admin'],
+                                  isOwner: isCourseOwner(
+                                    item,
+                                    user: currentUser,
                                   ),
-                                  tooltip: 'Edit di Halaman Detail',
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            CourseDetailPage(course: item),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red.shade700,
-                                    size: 22,
-                                  ),
-                                  tooltip: 'Hapus dari Supabase',
-                                  onPressed: () =>
-                                      _showSupabaseDeleteConfirmation(
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.edit_note,
+                                      color: Color(0xFF00796B),
+                                      size: 24,
+                                    ),
+                                    tooltip: 'Edit di Halaman Detail',
+                                    onPressed: () {
+                                      Navigator.push(
                                         context,
-                                        item,
-                                      ),
+                                        MaterialPageRoute(
+                                          builder: (_) => CourseDetailPage(
+                                            course: item,
+                                            userRole: effectiveRole,
+                                            isOwner: isCourseOwner(
+                                              item,
+                                              user: currentUser,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                RoleGuard(
+                                  userRole: effectiveRole,
+                                  allowedRoles: const ['instructor', 'admin'],
+                                  isOwner: isCourseOwner(
+                                    item,
+                                    user: currentUser,
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red.shade700,
+                                      size: 22,
+                                    ),
+                                    tooltip: 'Hapus dari Supabase',
+                                    onPressed: () =>
+                                        _showSupabaseDeleteConfirmation(
+                                          context,
+                                          item,
+                                        ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -2200,23 +2431,62 @@ class SupabaseCourseSection extends StatelessWidget {
 // =============================================================================
 // WORKSHEET 9 - PRAKTIK 1: KARTU STATUS SESI SUPABASE AUTH
 // =============================================================================
-class SupabaseUserCard extends StatelessWidget {
+
+class SupabaseUserCard extends StatefulWidget {
   const SupabaseUserCard({super.key});
+
+  @override
+  State<SupabaseUserCard> createState() => _SupabaseUserCardState();
+}
+
+class _SupabaseUserCardState extends State<SupabaseUserCard> {
+  UserProfile? _profile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await ProfileService.instance.getCurrentProfile();
+
+      if (!mounted) return;
+
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('[SupabaseUserCard] Gagal mengambil profil: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     User? user;
+
     try {
       user = AuthService.instance.currentUser;
     } catch (_) {
       user = null;
     }
+
     final email = user?.email ?? 'Belum login (Mode Tamu)';
     final userId = user?.id ?? '-';
     final isAuthed = user != null;
-    final meta = user?.userMetadata;
-    final role = (meta?['role'] as String? ?? 'student').toLowerCase();
-    final name = meta?['name'] as String?;
+
+    // Nama dan role berasal dari tabel public.profiles.
+    final role = (_profile?.role ?? 'student').toLowerCase();
+    final name = _profile?.name;
 
     return Card(
       elevation: 0,
@@ -2236,7 +2506,9 @@ class SupabaseUserCard extends StatelessWidget {
               children: [
                 Icon(
                   isAuthed ? Icons.verified_user : Icons.no_accounts_outlined,
-                  color: isAuthed ? const Color(0xFF1D4ED8) : Colors.grey.shade600,
+                  color: isAuthed
+                      ? const Color(0xFF1D4ED8)
+                      : Colors.grey.shade600,
                   size: 24,
                 ),
                 const SizedBox(width: 10),
@@ -2249,7 +2521,9 @@ class SupabaseUserCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: isAuthed ? const Color(0xFF1E3A8A) : Colors.grey.shade800,
+                          color: isAuthed
+                              ? const Color(0xFF1E3A8A)
+                              : Colors.grey.shade800,
                         ),
                       ),
                       Text(
@@ -2258,19 +2532,28 @@ class SupabaseUserCard extends StatelessWidget {
                             : 'Belum ada sesi aktif',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isAuthed ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                          color: isAuthed
+                              ? const Color(0xFF2563EB)
+                              : Colors.grey.shade600,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: isAuthed ? const Color(0xFFDCFCE7) : Colors.grey.shade200,
+                    color: isAuthed
+                        ? const Color(0xFFDCFCE7)
+                        : Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isAuthed ? const Color(0xFF86EFAC) : Colors.grey.shade300,
+                      color: isAuthed
+                          ? const Color(0xFF86EFAC)
+                          : Colors.grey.shade300,
                     ),
                   ),
                   child: Text(
@@ -2278,16 +2561,24 @@ class SupabaseUserCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: isAuthed ? const Color(0xFF15803D) : Colors.grey.shade700,
+                      color: isAuthed
+                          ? const Color(0xFF15803D)
+                          : Colors.grey.shade700,
                     ),
                   ),
                 ),
               ],
             ),
+
             const Divider(height: 20, thickness: 1),
+
             Row(
               children: [
-                const Icon(Icons.email_outlined, size: 16, color: Color(0xFF475569)),
+                const Icon(
+                  Icons.email_outlined,
+                  size: 16,
+                  color: Color(0xFF475569),
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Email: ',
@@ -2302,19 +2593,28 @@ class SupabaseUserCard extends StatelessWidget {
                     email,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isAuthed ? FontWeight.bold : FontWeight.normal,
-                      color: isAuthed ? const Color(0xFF1E40AF) : Colors.grey.shade700,
+                      fontWeight: isAuthed
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isAuthed
+                          ? const Color(0xFF1E40AF)
+                          : Colors.grey.shade700,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
+
             if (isAuthed && name != null && name.isNotEmpty) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF475569)),
+                  const Icon(
+                    Icons.badge_outlined,
+                    size: 16,
+                    color: Color(0xFF475569),
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Nama: ',
@@ -2338,11 +2638,16 @@ class SupabaseUserCard extends StatelessWidget {
                 ],
               ),
             ],
+
             if (isAuthed) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF475569)),
+                  const Icon(
+                    Icons.shield_outlined,
+                    size: 16,
+                    color: Color(0xFF475569),
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Role: ',
@@ -2352,26 +2657,38 @@ class SupabaseUserCard extends StatelessWidget {
                       color: Color(0xFF334155),
                     ),
                   ),
-                  Text(
-                    role.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: role == 'instructor'
-                          ? const Color(0xFF7C3AED)
-                          : role == 'admin'
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFF0284C7),
+                  if (_isLoading)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Text(
+                      role.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: role == 'instructor'
+                            ? const Color(0xFF7C3AED)
+                            : role == 'admin'
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF0284C7),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
+
             if (isAuthed) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.fingerprint, size: 16, color: Color(0xFF475569)),
+                  const Icon(
+                    Icons.fingerprint,
+                    size: 16,
+                    color: Color(0xFF475569),
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'User ID: ',
@@ -2395,13 +2712,19 @@ class SupabaseUserCard extends StatelessWidget {
                 ],
               ),
             ],
+
             const SizedBox(height: 14),
+
             SizedBox(
               width: double.infinity,
               child: isAuthed
                   ? OutlinedButton.icon(
                       onPressed: () => AuthService.logoutDialog(context),
-                      icon: const Icon(Icons.logout, size: 16, color: Color(0xFFDC2626)),
+                      icon: const Icon(
+                        Icons.logout,
+                        size: 16,
+                        color: Color(0xFFDC2626),
+                      ),
                       label: const Text(
                         'Logout dari Akun Supabase',
                         style: TextStyle(

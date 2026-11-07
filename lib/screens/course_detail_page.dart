@@ -6,11 +6,53 @@ import 'package:provider/provider.dart';
 
 import '../models/course.dart';
 import '../providers/course_provider.dart';
+import '../services/auth_service.dart';
+import '../services/profile_service.dart';
+import '../widgets/role_guard.dart';
 
-class CourseDetailPage extends StatelessWidget {
+class CourseDetailPage extends StatefulWidget {
   final Course course;
+  final String? userRole;
+  final bool? isOwner;
+  final ProfileService? profileService;
+  final AuthService? authService;
 
-  const CourseDetailPage({super.key, required this.course});
+  const CourseDetailPage({
+    super.key,
+    required this.course,
+    this.userRole,
+    this.isOwner,
+    this.profileService,
+    this.authService,
+  });
+
+  @override
+  State<CourseDetailPage> createState() => _CourseDetailPageState();
+}
+
+class _CourseDetailPageState extends State<CourseDetailPage> {
+  late String? _currentRole;
+
+  @override
+  void initState() {
+    super.initState();
+    final pService = widget.profileService ?? ProfileService.instance;
+    _currentRole = widget.userRole ?? pService.currentUserRoleSync;
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    if (widget.userRole != null) return;
+    try {
+      final pService = widget.profileService ?? ProfileService.instance;
+      final role = await pService.getCurrentUserRole();
+      if (mounted && role != _currentRole) {
+        setState(() {
+          _currentRole = role;
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> _showEditDialog(BuildContext context, Course item) async {
     // 3. Hubungkan fitur Edit Course dari halaman detail agar perubahan title, credits, dan status disimpan ke tabel Supabase berdasarkan id.
@@ -227,37 +269,54 @@ class CourseDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final courseProvider = context.watch<CourseProvider>();
-    final isFavorite = courseProvider.isFavorite(course.code);
+    final isFavorite = courseProvider.isFavorite(widget.course.code);
 
     // Ambil data course terbaru dari provider jika sudah diperbarui di Supabase atau lokal
     final currentCourse =
         courseProvider.supabaseCourses
             .where(
               (c) =>
-                  (course.id != null && c.id == course.id) ||
-                  c.code == course.code,
+                  (widget.course.id != null && c.id == widget.course.id) ||
+                  c.code == widget.course.code,
             )
             .firstOrNull ??
         courseProvider.courses
-            .where((c) => c.code == course.code)
+            .where((c) => c.code == widget.course.code)
             .firstOrNull ??
-        course;
+        widget.course;
+
+    final effectiveRole = _currentRole;
+    final effectiveIsOwner = widget.isOwner ??
+        isCourseOwner(
+          currentCourse,
+          user: (widget.authService ?? AuthService.instance).currentUser,
+        );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Course Detail'),
         actions: [
-          // Tombol Edit Course di AppBar
-          IconButton(
-            onPressed: () => _showEditDialog(context, currentCourse),
-            icon: const Icon(Icons.edit),
-            tooltip: 'Edit Course (Supabase)',
+          // Tombol Edit Course di AppBar (RoleGuard: instructor [owner], admin)
+          RoleGuard(
+            userRole: effectiveRole,
+            allowedRoles: const ['instructor', 'admin'],
+            isOwner: effectiveIsOwner,
+            child: IconButton(
+              onPressed: () => _showEditDialog(context, currentCourse),
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit Course (Supabase)',
+            ),
           ),
-          // Tombol Hapus Course di AppBar (Tahap 15)
-          IconButton(
-            onPressed: () => _showDeleteDialog(context, currentCourse),
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            tooltip: 'Hapus Course (Supabase)',
+          // Tombol Hapus Course di AppBar (RoleGuard: instructor [owner], admin)
+          RoleGuard(
+            userRole: effectiveRole,
+            allowedRoles: const ['instructor', 'admin'],
+            isOwner: effectiveIsOwner,
+            child: IconButton(
+              onPressed: () => _showDeleteDialog(context, currentCourse),
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              tooltip: 'Hapus Course (Supabase)',
+            ),
           ),
           IconButton(
             onPressed: () {
@@ -329,37 +388,51 @@ class CourseDetailPage extends StatelessWidget {
             const Text('NIM: 2415051014'),
             const SizedBox(height: 30),
 
-            // Tombol Edit Course di Supabase
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showEditDialog(context, currentCourse),
-                icon: const Icon(Icons.edit_note),
-                label: const Text('Edit Course di Supabase'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00796B),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            // Tombol Edit Course di Supabase (RoleGuard: instructor [owner], admin)
+            RoleGuard(
+              userRole: effectiveRole,
+              allowedRoles: const ['instructor', 'admin'],
+              isOwner: effectiveIsOwner,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showEditDialog(context, currentCourse),
+                    icon: const Icon(Icons.edit_note),
+                    label: const Text('Edit Course di Supabase'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00796B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
 
-            // Tombol Hapus Course dari Supabase (Tahap 15)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showDeleteDialog(context, currentCourse),
-                icon: const Icon(Icons.delete_forever),
-                label: const Text('Hapus Course dari Supabase'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            // Tombol Hapus Course dari Supabase (RoleGuard: instructor [owner], admin)
+            RoleGuard(
+              userRole: effectiveRole,
+              allowedRoles: const ['instructor', 'admin'],
+              isOwner: effectiveIsOwner,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showDeleteDialog(context, currentCourse),
+                    icon: const Icon(Icons.delete_forever),
+                    label: const Text('Hapus Course dari Supabase'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
 
             // Tombol Favorite
             SizedBox(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../screens/login_page.dart';
+import 'profile_service.dart';
 
 // =============================================================================
 // WORKSHEET 9 - PRAKTIK 1 & 2: AUTHENTICATION SERVICE (AuthService)
@@ -101,11 +102,13 @@ class AuthService {
   /// Masuk dengan email dan password ke Supabase Auth
   Future<AuthResponse> login(String email, String password) async {
     debugPrint('[AuthService] Melakukan login untuk email: $email');
+    ProfileService.instance.clearCache();
     try {
       final response = await client.auth.signInWithPassword(
         email: email.trim(),
         password: password,
       );
+      ProfileService.instance.clearCache();
       debugPrint(
         '[AuthService] Login berhasil! User ID: ${response.user?.id}, Email: ${response.user?.email}',
       );
@@ -122,10 +125,13 @@ class AuthService {
   /// Keluar dari sesi Supabase Auth (Sign Out)
   Future<void> signOut() async {
     debugPrint('[AuthService] Melakukan signOut...');
+    ProfileService.instance.clearCache();
     try {
       await client.auth.signOut();
+      ProfileService.instance.clearCache();
       debugPrint('[AuthService] signOut berhasil. Sesi telah dihapus.');
     } catch (e) {
+      ProfileService.instance.clearCache();
       debugPrint('[AuthService] Exception saat signOut: $e');
       rethrow;
     }

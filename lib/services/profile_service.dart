@@ -19,8 +19,56 @@ class ProfileService {
   static set instance(ProfileService service) => _instance = service;
 
   final SupabaseClient? _customClient;
+  UserProfile? _cachedProfile;
 
   ProfileService({SupabaseClient? client}) : _customClient = client;
+
+  /// Profil pengguna terakhir yang berhasil dimuat dari database.
+  /// Otomatis memvalidasi bahwa cache sesuai dengan user autentikasi aktif saat ini.
+  UserProfile? get cachedProfile {
+    try {
+      final currentUserId = client.auth.currentUser?.id;
+      if (currentUserId == null ||
+          (currentUserId.isNotEmpty && _cachedProfile?.id != currentUserId)) {
+        _cachedProfile = null;
+      }
+    } catch (_) {}
+    return _cachedProfile;
+  }
+
+  /// Mengatur cache profil secara manual (misal untuk testing)
+  @visibleForTesting
+  set cachedProfile(UserProfile? profile) => _cachedProfile = profile;
+
+  /// Membersihkan cache profil (misalnya saat logout atau pergantian akun)
+  void clearCache() {
+    _cachedProfile = null;
+  }
+
+  /// Mengambil role pengguna aktif secara sinkron jika profil sudah berada di cache.
+  /// Mengembalikan null jika belum dimuat agar caller dapat menampilkan status loading
+  /// dan TIDAK melakukan fallback ke 'student' secara prematur.
+  String? get currentUserRoleSync {
+    final profile = cachedProfile;
+    if (profile != null && profile.role.isNotEmpty) {
+      return profile.role;
+    }
+    return null;
+  }
+
+  /// Mengambil role pengguna aktif secara asinkron dari tabel profiles.
+  /// Mengembalikan null jika pengguna belum login atau profil gagal dimuat.
+  Future<String?> getCurrentUserRole() async {
+    try {
+      final profile = await getCurrentProfile();
+      if (profile != null && profile.role.isNotEmpty) {
+        return profile.role;
+      }
+    } catch (e) {
+      debugPrint('[ProfileService] Error saat mengambil role: $e');
+    }
+    return cachedProfile?.role;
+  }
 
   /// Instance SupabaseClient yang aktif
   SupabaseClient get client => _customClient ?? Supabase.instance.client;
@@ -38,10 +86,15 @@ class ProfileService {
 
     if (user == null) {
       debugPrint('[ProfileService] Tidak ada user aktif yang sedang terautentikasi.');
+      _cachedProfile = null;
       return null;
     }
 
-    return getProfileById(user.id, fallbackEmail: user.email);
+    final profile = await getProfileById(user.id, fallbackEmail: user.email);
+    if (profile != null) {
+      _cachedProfile = profile;
+    }
+    return profile;
   }
 
   /// Mengambil data profil dari tabel `profiles` berdasarkan user ID (UUID)

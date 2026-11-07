@@ -139,18 +139,37 @@ class CourseSupabaseService {
   }
 
   /// Menambahkan course baru ke tabel `courses` di Supabase.
+
   Future<void> createCourse(Course course) async {
-    // Validasi data sebelum dikirim ke database (Kasus E)
     validateCourse(course);
 
     debugPrint(
-      '[TAHAP 13 - CourseSupabaseService] Menambahkan course ke Supabase: ${course.code} - ${course.title}',
+      '[TAHAP 13] Menambahkan course: ${course.code} - ${course.title}',
     );
 
     try {
-      await client.from('courses').insert(course.toJson());
+      final currentUserId = client.auth.currentUser?.id;
+
+      debugPrint('[TAHAP 13] Current User ID: $currentUserId');
+
+      if (currentUserId == null || currentUserId.isEmpty) {
+        throw Exception(
+          'Pengguna belum terautentikasi. UUID akun tidak ditemukan.',
+        );
+      }
+
+      final payload = Map<String, dynamic>.from(course.toJson());
+
+      // Mengisi user_id dengan UUID akun yang sedang login
+      payload['user_id'] = currentUserId;
+
+      debugPrint('[TAHAP 13] Payload: $payload');
+
+      await client.from('courses').insert(payload);
+
       debugPrint(
-        '[TAHAP 13 - CourseSupabaseService] Berhasil menambahkan course ke Supabase',
+        '[TAHAP 13] Berhasil menambahkan course '
+        'dengan user_id: $currentUserId',
       );
     } catch (e) {
       _handleError(e, 'menambahkan course ke Supabase');

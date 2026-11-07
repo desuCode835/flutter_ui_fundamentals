@@ -12,6 +12,9 @@ class Course {
   final int? userId;
   final String? body;
 
+  // Field khusus untuk kepemilikan database Supabase (UUID auth.users.id)
+  final String? supabaseUserId;
+
   const Course({
     required this.code,
     required this.title,
@@ -20,6 +23,7 @@ class Course {
     this.id,
     this.userId,
     this.body,
+    this.supabaseUserId,
   });
 
   // ===========================================================================
@@ -99,12 +103,17 @@ class Course {
       }
     }
 
+    // Ekstraksi field 'user_id' untuk database Supabase (UUID)
+    final rawSupabaseUserId = json['user_id'] ?? json['supabaseUserId'];
+    final String? supabaseUserId = rawSupabaseUserId?.toString();
+
     return Course(
       code: (rawCode as String?) ?? '',
       title: (rawTitle as String?) ?? '',
       credits: credits,
       status: (rawStatus as String?) ?? 'active',
       id: id,
+      supabaseUserId: supabaseUserId,
     );
   }
 
@@ -188,6 +197,7 @@ class Course {
     int? id,
     int? userId,
     String? body,
+    String? supabaseUserId,
   }) {
     return Course(
       code: code ?? this.code,
@@ -197,6 +207,7 @@ class Course {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       body: body ?? this.body,
+      supabaseUserId: supabaseUserId ?? this.supabaseUserId,
     );
   }
 
@@ -212,6 +223,12 @@ class Course {
       };
     }
 
-    return {'code': code, 'title': title, 'credits': credits, 'status': status};
+    return {
+      'code': code,
+      'title': title,
+      'credits': credits,
+      'status': status,
+      if (supabaseUserId != null) 'user_id': supabaseUserId,
+    };
   }
 }
