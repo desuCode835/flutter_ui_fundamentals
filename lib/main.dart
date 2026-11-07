@@ -4,7 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'firebase_options.dart';
 import 'config/supabase_config.dart';
 import 'providers/course_provider.dart';
 import 'repositories/course_repository.dart';
@@ -18,17 +21,67 @@ import 'services/course_api_service.dart';
 import 'services/course_service.dart';
 import 'services/course_supabase_service.dart';
 
+// ======================================================
+// FIREBASE CLOUD MESSAGING
+// ======================================================
+
+Future<void> initializeFCM() async {
+  // Meminta izin notifikasi kepada pengguna
+  final NotificationSettings settings = await FirebaseMessaging.instance
+      .requestPermission(alert: true, badge: true, sound: true);
+
+  debugPrint('Status izin notifikasi: ${settings.authorizationStatus}');
+
+  // Mendengarkan FCM registration token
+  FirebaseMessaging.instance.onRegistered.listen((token) {
+    debugPrint('FCM TOKEN: $token');
+  });
+
+  // Mendaftarkan perangkat ke Firebase Cloud Messaging
+  await FirebaseMessaging.instance.register();
+
+  // Mendengarkan notifikasi ketika aplikasi sedang terbuka
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    debugPrint('Notifikasi FCM diterima!');
+    debugPrint('Judul: ${message.notification?.title}');
+    debugPrint('Isi: ${message.notification?.body}');
+  });
+
+  // Mendengarkan ketika pengguna membuka notifikasi
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    debugPrint('Pengguna membuka notifikasi FCM.');
+    debugPrint('Judul: ${message.notification?.title}');
+  });
+}
+
+// ======================================================
+// MAIN
+// ======================================================
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inisialisasi Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  debugPrint('Firebase berhasil diinisialisasi.');
+
+  // Inisialisasi Firebase Cloud Messaging
+  await initializeFCM();
+
+  // Inisialisasi Supabase
   await Supabase.initialize(
     url: SupabaseConfig.supabaseUrl,
     publishableKey: SupabaseConfig.supabaseAnonKey,
   );
 
+  debugPrint('Supabase berhasil diinisialisasi.');
+
+  // Inisialisasi service dan repository
   final service = CourseService();
   final apiService = CourseApiService();
   final supabaseService = CourseSupabaseService();
+
   final repository = CourseRepository(service, apiService, supabaseService);
 
   runApp(
@@ -37,6 +90,7 @@ Future<void> main() async {
         debugPrint(
           '[DEBUG - Kasus B] ChangeNotifierProvider berhasil diinisialisasi membungkus root tree.',
         );
+
         return CourseProvider(repository);
       },
       child: const MyApp(),
@@ -57,10 +111,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // PRAKTIK 2: Pengecekan current session ketika aplikasi pertama kali dibuka.
-    // Jika user memiliki session aktif dan valid di Supabase Auth -> langsung tampilkan ResponsiveShell (HomePage)
+    // Jika user memiliki session aktif dan valid di Supabase Auth -> langsung tampilkan ResponsiveShell (HomePage).
     // Jika tidak ada session -> tampilkan LoginPage.
     final auth = authService ?? AuthService.instance;
-    final Widget initialHome = home ??
+
+    final Widget initialHome =
+        home ??
         (auth.isLoggedIn
             ? const ResponsiveShell()
             : LoginPage(authService: auth));
@@ -108,6 +164,7 @@ class MyApp extends StatelessWidget {
                 color: Color(0xFF1E40AF),
               );
             }
+
             return const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -149,6 +206,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         setState(() {
           selectedIndex = index;
         });
+
         if (index == 1) {
           context.read<CourseProvider>().fetchSupabaseCourses();
         }
@@ -185,6 +243,7 @@ class _ResponsiveShellState extends State<ResponsiveShell> {
         setState(() {
           selectedIndex = index;
         });
+
         if (index == 1) {
           context.read<CourseProvider>().fetchSupabaseCourses();
         }
