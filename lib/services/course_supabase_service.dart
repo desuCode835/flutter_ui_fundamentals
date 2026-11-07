@@ -138,8 +138,10 @@ class CourseSupabaseService {
     }
   }
 
-  /// Menambahkan course baru ke tabel `courses` di Supabase.
+  /// Alias fetchCourses untuk kepatuhan penamaan method Praktik 5
+  Future<List<Course>> fetchCourses() => getCourses();
 
+  /// Menambahkan course baru ke tabel `courses` di Supabase.
   Future<void> createCourse(Course course) async {
     validateCourse(course);
 
@@ -153,8 +155,10 @@ class CourseSupabaseService {
       debugPrint('[TAHAP 13] Current User ID: $currentUserId');
 
       if (currentUserId == null || currentUserId.isEmpty) {
-        throw Exception(
-          'Pengguna belum terautentikasi. UUID akun tidak ditemukan.',
+        throw const PostgrestException(
+          message:
+              'Pengguna belum terautentikasi. Penambahan course memerlukan autentikasi aktif sesuai kebijakan RLS.',
+          code: '42501',
         );
       }
 
@@ -178,6 +182,7 @@ class CourseSupabaseService {
 
   /// Memperbarui data course di tabel `courses` di Supabase berdasarkan `id`.
   /// Menyimpan perubahan title, credits, dan status.
+  /// Memverifikasi bahwa baris berhasil diperbarui dan tidak diblokir oleh RLS.
   Future<void> updateCourse(Course course, {int? id}) async {
     final targetId = id ?? course.id;
     final courseToValidate = course.copyWith(id: targetId);
@@ -190,14 +195,33 @@ class CourseSupabaseService {
     );
 
     try {
-      await client
+      final currentUserId = client.auth.currentUser?.id;
+      if (currentUserId == null || currentUserId.isEmpty) {
+        throw const PostgrestException(
+          message:
+              'Pengguna belum terautentikasi. Pembaruan course memerlukan autentikasi aktif sesuai kebijakan RLS.',
+          code: '42501',
+        );
+      }
+
+      final response = await client
           .from('courses')
           .update({
             'title': course.title,
             'credits': course.credits,
             'status': course.status,
           })
-          .eq('id', targetId!);
+          .eq('id', targetId!)
+          .select();
+
+      final list = response as List<dynamic>?;
+      if (list == null || list.isEmpty) {
+        throw const PostgrestException(
+          message:
+              'Operasi UPDATE ditolak oleh kebijakan keamanan RLS (Row Level Security) atau data course tidak ditemukan.',
+          code: '42501',
+        );
+      }
 
       debugPrint(
         '[TAHAP 14 - CourseSupabaseService] Berhasil memperbarui course ID $targetId di Supabase: ${course.title}',
@@ -208,6 +232,7 @@ class CourseSupabaseService {
   }
 
   /// Menghapus data course dari tabel `courses` di Supabase berdasarkan `id`.
+  /// Memverifikasi bahwa baris berhasil dihapus dan tidak diblokir oleh RLS.
   Future<void> deleteCourse(int id) async {
     if (id <= 0) {
       throw ArgumentError('ID course tidak valid untuk penghapusan: $id');
@@ -218,7 +243,27 @@ class CourseSupabaseService {
     );
 
     try {
-      await client.from('courses').delete().eq('id', id);
+      final currentUserId = client.auth.currentUser?.id;
+      if (currentUserId == null || currentUserId.isEmpty) {
+        throw const PostgrestException(
+          message:
+              'Pengguna belum terautentikasi. Penghapusan course memerlukan autentikasi aktif sesuai kebijakan RLS.',
+          code: '42501',
+        );
+      }
+
+      final response =
+          await client.from('courses').delete().eq('id', id).select();
+
+      final list = response as List<dynamic>?;
+      if (list == null || list.isEmpty) {
+        throw const PostgrestException(
+          message:
+              'Operasi DELETE ditolak oleh kebijakan keamanan RLS (Row Level Security) atau data course tidak ditemukan.',
+          code: '42501',
+        );
+      }
+
       debugPrint(
         '[TAHAP 15 - CourseSupabaseService] Berhasil menghapus course ID $id dari Supabase',
       );

@@ -31,36 +31,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
-  String? _profileError;
   String? _currentRole;
 
   @override
   void initState() {
     super.initState();
     final pService = widget.profileService ?? ProfileService.instance;
-    final aService = widget.authService ?? AuthService.instance;
 
     if (widget.userRole != null) {
       _currentRole = widget.userRole;
-      _isLoadingProfile = false;
-      final u = aService.currentUser;
-      _userProfile = UserProfile(
-        id: u?.id ?? 'override',
-        email: u?.email ?? '',
-        name: u?.userMetadata?['name'] as String? ?? 'User',
-        role: widget.userRole!,
-      );
     } else {
       final cached = pService.cachedProfile;
       if (cached != null) {
-        _userProfile = cached;
         _currentRole = cached.role;
-        _isLoadingProfile = false;
       } else {
         _currentRole = null;
-        _isLoadingProfile = true;
       }
       _loadProfile();
     }
@@ -73,10 +58,7 @@ class _HomePageState extends State<HomePage> {
     if (user == null) {
       if (mounted) {
         setState(() {
-          _userProfile = null;
           _currentRole = null;
-          _isLoadingProfile = false;
-          _profileError = null;
         });
       }
       return;
@@ -87,17 +69,10 @@ class _HomePageState extends State<HomePage> {
       final profile = await pService.getCurrentProfile();
       if (!mounted) return;
       setState(() {
-        _userProfile = profile;
         _currentRole = profile?.role;
-        _isLoadingProfile = false;
-        _profileError = null;
       });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _profileError = e.toString().replaceAll('Exception: ', '').trim();
-        _isLoadingProfile = false;
-      });
+    } catch (_) {
+      // Role tetap null atau mempertahankan cached state
     }
   }
 
@@ -285,66 +260,6 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
-  }
-
-  Widget _buildProfileCard() {
-    if (_isLoadingProfile) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-
-    if (_profileError != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red),
-              const SizedBox(height: 8),
-              Text(_profileError!),
-              TextButton(
-                onPressed: _loadProfile,
-                child: const Text('Coba Lagi'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final profile = _userProfile;
-
-    if (profile == null) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('Profil pengguna belum tersedia.'),
-        ),
-      );
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Informasi Akun',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text('Nama: ${profile.name}'),
-            Text('Email: ${profile.email}'),
-            Text('Role: ${profile.role.toUpperCase()}'),
-          ],
-        ),
-      ),
-    );
   }
 
   @override

@@ -42,6 +42,9 @@ class CourseRepository {
     return supabaseService.getCourses();
   }
 
+  /// Alias fetchSupabaseCourses untuk fleksibilitas pemanggilan
+  Future<List<Course>> fetchSupabaseCourses() => getSupabaseCourses();
+
   // ===========================================================================
   // TAHAP 13: METHOD INSERT COURSE MELALUI CourseSupabaseService
   // ===========================================================================
