@@ -73,7 +73,21 @@ class SimulatedRlsCourseSupabaseService extends CourseSupabaseService {
       );
     }
 
-    // 3. Stamping user_id milik pengguna yang sedang login
+    // 3. Stamping user_id milik pengguna yang sedang login & pencegahan spoofing user_id
+    final targetUserId = (course.supabaseUserId != null &&
+            course.supabaseUserId!.isNotEmpty)
+        ? course.supabaseUserId!
+        : simulatedUserId!;
+
+    // Policy courses_insert_instructor_admin: Instructor wajib user_id = auth.uid()
+    if (simulatedUserRole == 'instructor' && targetUserId != simulatedUserId) {
+      throw const PostgrestException(
+        message:
+            'new row violates row-level security policy for table "courses" (Instructor dilarang INSERT dengan user_id milik pengguna lain)',
+        code: '42501',
+      );
+    }
+
     final newId = (_database.isEmpty
             ? 0
             : _database.map((c) => c.id ?? 0).reduce((a, b) => a > b ? a : b)) +
@@ -81,7 +95,7 @@ class SimulatedRlsCourseSupabaseService extends CourseSupabaseService {
 
     final stampedCourse = course.copyWith(
       id: newId,
-      supabaseUserId: simulatedUserId,
+      supabaseUserId: targetUserId,
     );
 
     _database.insert(0, stampedCourse);

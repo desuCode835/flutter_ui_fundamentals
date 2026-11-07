@@ -164,8 +164,12 @@ class CourseSupabaseService {
 
       final payload = Map<String, dynamic>.from(course.toJson());
 
-      // Mengisi user_id dengan UUID akun yang sedang login
-      payload['user_id'] = currentUserId;
+      // Mengisi user_id dengan UUID akun yang sedang login jika belum dispesifikasikan
+      // (atau menggunakan nilai eksplisit dari course untuk memverifikasi penolakan RLS saat spoofing user_id)
+      payload['user_id'] = (course.supabaseUserId != null &&
+              course.supabaseUserId!.trim().isNotEmpty)
+          ? course.supabaseUserId!.trim()
+          : currentUserId;
 
       debugPrint('[TAHAP 13] Payload: $payload');
 
